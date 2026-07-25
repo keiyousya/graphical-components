@@ -1,0 +1,39 @@
+---
+interface NavItem {
+  label: string;
+  href: string;
+  active?: boolean;
+}
+
+interface Props {
+  items: NavItem[];
+  class?: string;
+}
+
+const { items, class: className = "" } = Astro.props;
+---
+
+<nav class:list={["hud-nav", className]}>
+  <div class="flex items-center border border-cyber-800/40 bg-void-600/50 backdrop-blur-sm">
+    {items.map((item, i) => (
+      <a
+        href={item.href}
+        class:list={[
+          "relative flex items-center gap-2 px-5 py-3 font-display text-xs tracking-widest uppercase transition-all duration-300",
+          i > 0 && "border-l border-cyber-800/40",
+          item.active
+            ? "text-cyber-200 bg-cyber-500/10"
+            : "text-cyber-600 hover:text-cyber-300 hover:bg-cyber-500/5",
+        ]}
+      >
+        {item.active && (
+          <>
+            <span class="absolute top-0 left-0 right-0 h-px bg-cyber-500 shadow-glow-sm" />
+            <span class="size-1 bg-cyber-500 animate-pulse-glow" />
+          </>
+        )}
+        {item.label}
+      </a>
+    ))}
+  </div>
+</nav>

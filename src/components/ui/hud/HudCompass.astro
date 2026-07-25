@@ -1,0 +1,74 @@
+---
+interface Props {
+  heading?: number;
+  class?: string;
+}
+
+const { heading = 0, class: className = "" } = Astro.props;
+---
+
+<div
+  class:list={["hud-compass relative overflow-hidden h-10 border border-cyber-800/30 bg-void-600/50 backdrop-blur-sm", className]}
+  data-heading={heading}
+>
+  <div class="compass-strip absolute inset-0 flex items-center font-mono text-[10px] text-cyber-600 whitespace-nowrap transition-transform duration-100">
+    <!-- Generated in JS -->
+  </div>
+  <!-- Center indicator -->
+  <div class="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-cyber-500"></div>
+  <div class="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent border-t-cyber-500"></div>
+  <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-l-transparent border-r-transparent border-b-cyber-500"></div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>(".hud-compass").forEach((el) => {
+    const strip = el.querySelector<HTMLElement>(".compass-strip");
+    if (!strip) return;
+
+    const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+
+    // Build compass strip
+    let html = "";
+    for (let deg = -180; deg <= 540; deg += 5) {
+      const normalized = ((deg % 360) + 360) % 360;
+      const dirIdx = Math.floor(normalized / 45);
+      const isCardinal = normalized % 90 === 0;
+      const isInter = normalized % 45 === 0 && !isCardinal;
+      const isTick = normalized % 15 === 0;
+
+      if (isCardinal) {
+        html += `<span class="inline-flex flex-col items-center mx-3"><span class="text-cyber-400 text-xs font-bold">${directions[dirIdx]}</span><span class="text-cyber-700 text-[8px]">${normalized}°</span></span>`;
+      } else if (isInter) {
+        html += `<span class="inline-flex flex-col items-center mx-2"><span class="text-cyber-600 text-[10px]">${directions[dirIdx]}</span></span>`;
+      } else if (isTick) {
+        html += `<span class="inline-block w-px h-2 bg-cyber-700/50 mx-2.5"></span>`;
+      } else {
+        html += `<span class="inline-block w-px h-1 bg-cyber-800/30 mx-2"></span>`;
+      }
+    }
+    strip.innerHTML = html;
+
+    // Animate heading
+    let currentHeading = parseFloat(el.dataset.heading || "0");
+    let targetHeading = currentHeading;
+
+    function updateHeading() {
+      const containerWidth = el.offsetWidth;
+      const stripWidth = strip!.scrollWidth;
+      const degreesPerPixel = stripWidth / 720;
+      const offset = -(currentHeading + 180) * degreesPerPixel + containerWidth / 2;
+      strip!.style.transform = `translateX(${offset}px)`;
+    }
+
+    // Simulate slow heading change
+    function animate() {
+      targetHeading += 0.1;
+      currentHeading += (targetHeading - currentHeading) * 0.05;
+      updateHeading();
+      requestAnimationFrame(animate);
+    }
+
+    updateHeading();
+    animate();
+  });
+</script>

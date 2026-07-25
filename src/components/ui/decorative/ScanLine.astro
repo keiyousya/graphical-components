@@ -1,0 +1,30 @@
+---
+interface Props {
+  speed?: "slow" | "normal" | "fast";
+  class?: string;
+}
+
+const { speed = "normal", class: className = "" } = Astro.props;
+
+const durations = {
+  slow: "6s",
+  normal: "4s",
+  fast: "2s",
+};
+---
+
+<div class:list={["scan-line-overlay pointer-events-none fixed inset-0 z-50 overflow-hidden", className]}>
+  <div
+    class="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-cyber-500/40 to-transparent"
+    style={`animation: scan-line-move ${durations[speed]} linear infinite;`}
+  >
+    <div class="absolute inset-x-0 -top-2 h-4 bg-gradient-to-b from-transparent via-cyber-500/5 to-transparent"></div>
+  </div>
+</div>
+
+<style>
+  @keyframes scan-line-move {
+    0% { top: -2px; }
+    100% { top: 100%; }
+  }
+</style>

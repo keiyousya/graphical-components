@@ -1,0 +1,32 @@
+---
+interface Props {
+  title?: string;
+  class?: string;
+}
+
+const { title = "TERMINAL", class: className = "" } = Astro.props;
+---
+
+<div
+  class:list={[
+    "border border-cyber-800/50 bg-void-700/80 overflow-hidden",
+    className,
+  ]}
+>
+  <!-- Title bar -->
+  <div class="flex items-center gap-3 border-b border-cyber-800/40 bg-void-600/60 px-4 py-2">
+    <div class="flex items-center gap-1.5">
+      <span class="size-2 rounded-full bg-danger-500/70"></span>
+      <span class="size-2 rounded-full bg-alert-500/70"></span>
+      <span class="size-2 rounded-full bg-status-500/70"></span>
+    </div>
+    <span class="font-mono text-[10px] text-cyber-600 tracking-widest uppercase">{title}</span>
+    <div class="flex-1"></div>
+    <span class="font-mono text-[10px] text-cyber-800">&#x2588;</span>
+  </div>
+
+  <!-- Content area -->
+  <div class="p-4 font-mono text-sm text-cyber-400 leading-relaxed effect-scanlines">
+    <slot />
+  </div>
+</div>

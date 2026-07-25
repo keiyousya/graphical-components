@@ -1,0 +1,68 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg";
+  animated?: boolean;
+  class?: string;
+}
+
+const { size = "md", animated = true, class: className = "" } = Astro.props;
+
+const sizes = {
+  sm: "size-24",
+  md: "size-40",
+  lg: "size-64",
+};
+---
+
+<div class:list={["hud-reticle relative inline-flex items-center justify-center", sizes[size], className]}>
+  <svg viewBox="0 0 200 200" class="size-full" fill="none" stroke="currentColor">
+    <!-- Outer ring -->
+    <circle cx="100" cy="100" r="95" stroke="oklch(0.55 0.18 195 / 0.2)" stroke-width="0.5" />
+    <circle cx="100" cy="100" r="90" stroke="oklch(0.55 0.18 195 / 0.15)" stroke-width="0.5" />
+
+    <!-- Rotating ring -->
+    <g class:list={[animated && "animate-[spin_8s_linear_infinite] origin-center"]}>
+      <circle cx="100" cy="100" r="85" stroke="oklch(0.55 0.18 195 / 0.4)" stroke-width="1" stroke-dasharray="8 12" />
+    </g>
+
+    <!-- Reverse rotating ring -->
+    <g class:list={[animated && "animate-[spin_12s_linear_infinite_reverse] origin-center"]}>
+      <circle cx="100" cy="100" r="75" stroke="oklch(0.50 0.20 250 / 0.3)" stroke-width="0.5" stroke-dasharray="4 16" />
+    </g>
+
+    <!-- Crosshairs -->
+    <line x1="100" y1="30" x2="100" y2="70" stroke="oklch(0.55 0.18 195 / 0.6)" stroke-width="0.5" />
+    <line x1="100" y1="130" x2="100" y2="170" stroke="oklch(0.55 0.18 195 / 0.6)" stroke-width="0.5" />
+    <line x1="30" y1="100" x2="70" y2="100" stroke="oklch(0.55 0.18 195 / 0.6)" stroke-width="0.5" />
+    <line x1="130" y1="100" x2="170" y2="100" stroke="oklch(0.55 0.18 195 / 0.6)" stroke-width="0.5" />
+
+    <!-- Corner brackets -->
+    <path d="M60 60 L60 50 L70 50" stroke="oklch(0.55 0.18 195 / 0.5)" stroke-width="1" />
+    <path d="M140 60 L140 50 L130 50" stroke="oklch(0.55 0.18 195 / 0.5)" stroke-width="1" />
+    <path d="M60 140 L60 150 L70 150" stroke="oklch(0.55 0.18 195 / 0.5)" stroke-width="1" />
+    <path d="M140 140 L140 150 L130 150" stroke="oklch(0.55 0.18 195 / 0.5)" stroke-width="1" />
+
+    <!-- Center diamond -->
+    <polygon points="100,90 110,100 100,110 90,100" stroke="oklch(0.55 0.18 195 / 0.8)" stroke-width="1" fill="oklch(0.55 0.18 195 / 0.1)" />
+
+    <!-- Tick marks -->
+    {Array.from({ length: 36 }).map((_, i) => (
+      <line
+        x1="100" y1={i % 3 === 0 ? "5" : "8"}
+        x2="100" y2="12"
+        stroke={`oklch(0.55 0.18 195 / ${i % 3 === 0 ? "0.5" : "0.2"})`}
+        stroke-width={i % 3 === 0 ? "1" : "0.5"}
+        transform={`rotate(${i * 10} 100 100)`}
+      />
+    ))}
+
+    <!-- Data readouts -->
+    <text x="155" y="55" fill="oklch(0.55 0.18 195 / 0.4)" font-size="6" font-family="monospace">AZ:247.3</text>
+    <text x="155" y="155" fill="oklch(0.55 0.18 195 / 0.4)" font-size="6" font-family="monospace">EL:+12.8</text>
+  </svg>
+
+  <!-- Center slot -->
+  <div class="absolute inset-0 flex items-center justify-center">
+    <slot />
+  </div>
+</div>

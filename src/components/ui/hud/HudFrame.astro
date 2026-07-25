@@ -1,0 +1,57 @@
+---
+interface Props {
+  title?: string;
+  status?: string;
+  class?: string;
+}
+
+const { title = "HUD", status, class: className = "" } = Astro.props;
+---
+
+<div class:list={["hud-frame relative", className]}>
+  <!-- Top bar -->
+  <div class="flex items-center gap-2 mb-1">
+    <div class="h-px flex-1 bg-gradient-to-r from-cyber-500/60 to-transparent"></div>
+    <span class="font-display text-[10px] text-cyber-400 tracking-[0.3em] uppercase">{title}</span>
+    <div class="h-px flex-1 bg-gradient-to-l from-cyber-500/60 to-transparent"></div>
+  </div>
+
+  <!-- Main frame -->
+  <div class="relative border border-cyber-500/20 bg-void-500/30 backdrop-blur-sm">
+    <!-- Corner brackets -->
+    <svg class="absolute top-0 left-0 w-6 h-6 text-cyber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M0 8 L0 0 L8 0" />
+    </svg>
+    <svg class="absolute top-0 right-0 w-6 h-6 text-cyber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M16 0 L24 0 L24 8" />
+    </svg>
+    <svg class="absolute bottom-0 left-0 w-6 h-6 text-cyber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M0 16 L0 24 L8 24" />
+    </svg>
+    <svg class="absolute bottom-0 right-0 w-6 h-6 text-cyber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M16 24 L24 24 L24 16" />
+    </svg>
+
+    <!-- Side ticks -->
+    <div class="absolute top-1/2 -left-px -translate-y-1/2 w-px h-8 bg-cyber-500/40"></div>
+    <div class="absolute top-1/2 -right-px -translate-y-1/2 w-px h-8 bg-cyber-500/40"></div>
+    <div class="absolute -top-px left-1/2 -translate-x-1/2 h-px w-8 bg-cyber-500/40"></div>
+    <div class="absolute -bottom-px left-1/2 -translate-x-1/2 h-px w-8 bg-cyber-500/40"></div>
+
+    <!-- Content -->
+    <div class="p-5">
+      <slot />
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="flex items-center gap-2 mt-1">
+    <div class="h-px w-12 bg-cyber-500/30"></div>
+    {status && (
+      <span class="font-mono text-[9px] text-cyber-600 tracking-widest uppercase">
+        {status}
+      </span>
+    )}
+    <div class="h-px flex-1 bg-cyber-500/10"></div>
+  </div>
+</div>

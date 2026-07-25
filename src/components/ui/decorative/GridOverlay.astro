@@ -1,0 +1,25 @@
+---
+interface Props {
+  density?: "sparse" | "normal" | "dense";
+  class?: string;
+}
+
+const { density = "normal", class: className = "" } = Astro.props;
+
+const gridSizes = {
+  sparse: "60px",
+  normal: "40px",
+  dense: "20px",
+};
+---
+
+<div
+  class:list={["grid-overlay pointer-events-none fixed inset-0 z-0", className]}
+  style={`
+    background-image:
+      linear-gradient(oklch(0.55 0.18 195 / 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(0.55 0.18 195 / 0.04) 1px, transparent 1px);
+    background-size: ${gridSizes[density]} ${gridSizes[density]};
+  `}
+>
+</div>

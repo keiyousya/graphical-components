@@ -1,0 +1,31 @@
+---
+interface Props {
+  tag?: "h1" | "h2" | "h3";
+  class?: string;
+}
+
+const { tag: Tag = "h2", class: className = "" } = Astro.props;
+---
+
+<Tag
+  class:list={[
+    "holo-heading relative font-display tracking-widest uppercase",
+    className,
+  ]}
+>
+  <span class="relative z-10">
+    <slot />
+  </span>
+  <!-- Underline glow -->
+  <span class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-500/60 to-transparent"></span>
+  <span class="absolute -bottom-px left-1/4 right-1/4 h-px bg-cyber-500/30 blur-sm"></span>
+</Tag>
+
+<style>
+  .holo-heading {
+    text-shadow:
+      0 0 10px oklch(0.55 0.18 195 / 0.4),
+      0 0 30px oklch(0.55 0.18 195 / 0.15);
+    padding-bottom: 0.5em;
+  }
+</style>

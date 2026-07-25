@@ -1,0 +1,72 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg";
+  label?: string;
+  class?: string;
+}
+
+const { size = "md", label, class: className = "" } = Astro.props;
+
+const sizes = {
+  sm: "size-8",
+  md: "size-16",
+  lg: "size-24",
+};
+---
+
+<div class:list={["inline-flex flex-col items-center gap-3", className]}>
+  <div class:list={["loading-spinner relative", sizes[size]]}>
+    <svg viewBox="0 0 100 100" class="size-full" fill="none">
+      <!-- Outer ring -->
+      <circle
+        cx="50" cy="50" r="45"
+        stroke="oklch(0.55 0.18 195 / 0.15)"
+        stroke-width="1"
+      />
+      <!-- Spinning arc -->
+      <circle
+        cx="50" cy="50" r="45"
+        stroke="oklch(0.55 0.18 195)"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-dasharray="80 200"
+        class="animate-[spin_1.5s_linear_infinite] origin-center"
+      />
+      <!-- Inner ring (reverse) -->
+      <circle
+        cx="50" cy="50" r="32"
+        stroke="oklch(0.50 0.20 250 / 0.15)"
+        stroke-width="1"
+      />
+      <circle
+        cx="50" cy="50" r="32"
+        stroke="oklch(0.50 0.20 250)"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-dasharray="50 150"
+        class="animate-[spin_2s_linear_infinite_reverse] origin-center"
+      />
+      <!-- Center dot -->
+      <circle
+        cx="50" cy="50" r="3"
+        fill="oklch(0.55 0.18 195)"
+        class="animate-pulse-glow"
+      />
+      <!-- Tick marks -->
+      {Array.from({ length: 12 }).map((_, i) => (
+        <line
+          x1="50" y1="8"
+          x2="50" y2="12"
+          stroke="oklch(0.55 0.18 195 / 0.3)"
+          stroke-width="0.5"
+          transform={`rotate(${i * 30} 50 50)`}
+        />
+      ))}
+    </svg>
+  </div>
+  {label && (
+    <span class="font-mono text-[10px] text-cyber-600 tracking-widest uppercase animate-pulse-glow">
+      {label}
+    </span>
+  )}
+</div>

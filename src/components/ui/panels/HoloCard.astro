@@ -1,0 +1,76 @@
+---
+interface Props {
+  title?: string;
+  class?: string;
+}
+
+const { title, class: className = "" } = Astro.props;
+---
+
+<div
+  class:list={[
+    "holo-card group relative overflow-hidden border border-holo-500/15 bg-void-500/40 backdrop-blur-lg transition-all duration-500 hover:border-holo-400/40 hover:shadow-glow-holo",
+    className,
+  ]}
+>
+  <!-- Holographic shimmer -->
+  <div
+    class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
+  >
+    <div class="absolute inset-0 bg-gradient-to-br from-holo-500/5 via-transparent to-bio-500/5">
+    </div>
+    <div class="holo-shimmer absolute inset-0"></div>
+  </div>
+
+  <!-- Top accent line -->
+  <div
+    class="h-px bg-gradient-to-r from-transparent via-holo-500/50 to-transparent group-hover:via-holo-400/80 transition-all duration-500"
+  >
+  </div>
+
+  <!-- Content -->
+  <div class="relative p-5">
+    {
+      title && (
+        <div class="flex items-center gap-3 mb-4">
+          <div class="size-1.5 bg-holo-500 animate-pulse-glow" />
+          <h3 class="font-display text-xs tracking-widest text-holo-300 uppercase">
+            {title}
+          </h3>
+          <div class="h-px flex-1 bg-holo-800/30" />
+        </div>
+      )
+    }
+    <slot />
+  </div>
+
+  <!-- Bottom accent -->
+  <div
+    class="h-px bg-gradient-to-r from-transparent via-holo-600/30 to-transparent"
+  >
+  </div>
+</div>
+
+<style>
+  .holo-shimmer {
+    background: linear-gradient(
+      105deg,
+      transparent 30%,
+      oklch(0.50 0.20 250 / 0.08) 45%,
+      oklch(0.50 0.22 300 / 0.06) 50%,
+      oklch(0.55 0.18 195 / 0.08) 55%,
+      transparent 70%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+</style>

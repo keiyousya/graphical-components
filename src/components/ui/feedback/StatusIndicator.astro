@@ -1,0 +1,34 @@
+---
+interface Props {
+  status?: "online" | "warning" | "error" | "offline";
+  label?: string;
+  pulse?: boolean;
+  class?: string;
+}
+
+const {
+  status = "online",
+  label,
+  pulse = true,
+  class: className = "",
+} = Astro.props;
+
+const statusConfig = {
+  online: { color: "bg-status-500", shadow: "shadow-glow-status", text: "text-status-400", label: "ONLINE" },
+  warning: { color: "bg-alert-500", shadow: "shadow-glow-alert", text: "text-alert-400", label: "WARNING" },
+  error: { color: "bg-danger-500", shadow: "shadow-glow-danger", text: "text-danger-400", label: "ERROR" },
+  offline: { color: "bg-cyber-700", shadow: "", text: "text-cyber-600", label: "OFFLINE" },
+};
+
+const cfg = statusConfig[status];
+---
+
+<div class:list={["inline-flex items-center gap-2.5", className]}>
+  <span class="relative flex items-center justify-center size-3">
+    <span class:list={["absolute inset-0 rounded-full", cfg.color, cfg.shadow, pulse && status !== "offline" && "animate-pulse-glow"]}></span>
+    <span class:list={["relative size-1.5 rounded-full", cfg.color]}></span>
+  </span>
+  <span class:list={["font-mono text-[10px] tracking-widest uppercase", cfg.text]}>
+    {label || cfg.label}
+  </span>
+</div>

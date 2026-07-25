@@ -1,0 +1,80 @@
+---
+interface Props {
+  variant?: "default" | "alert" | "danger" | "holo" | "bio";
+  glow?: boolean;
+  corners?: boolean;
+  class?: string;
+}
+
+const {
+  variant = "default",
+  glow = false,
+  corners = true,
+  class: className = "",
+} = Astro.props;
+
+const variantStyles = {
+  default: "border-cyber-500/20 bg-void-500/60",
+  alert: "border-alert-500/20 bg-void-500/60",
+  danger: "border-danger-500/20 bg-void-500/60",
+  holo: "border-holo-500/20 bg-void-500/60",
+  bio: "border-bio-500/20 bg-void-500/60",
+};
+
+const glowStyles = {
+  default: "shadow-glow-sm",
+  alert: "shadow-glow-alert",
+  danger: "shadow-glow-danger",
+  holo: "shadow-glow-holo",
+  bio: "shadow-glow-bio",
+};
+
+const cornerColor = {
+  default: "border-cyber-500",
+  alert: "border-alert-500",
+  danger: "border-danger-500",
+  holo: "border-holo-500",
+  bio: "border-bio-500",
+};
+---
+
+<div
+  class:list={[
+    "relative border backdrop-blur-md p-5",
+    variantStyles[variant],
+    glow && glowStyles[variant],
+    className,
+  ]}
+>
+  {
+    corners && (
+      <>
+        <span
+          class:list={[
+            "absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2",
+            cornerColor[variant],
+          ]}
+        />
+        <span
+          class:list={[
+            "absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2",
+            cornerColor[variant],
+          ]}
+        />
+        <span
+          class:list={[
+            "absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2",
+            cornerColor[variant],
+          ]}
+        />
+        <span
+          class:list={[
+            "absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2",
+            cornerColor[variant],
+          ]}
+        />
+      </>
+    )
+  }
+  <slot />
+</div>

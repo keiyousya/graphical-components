@@ -1,0 +1,138 @@
+---
+interface Props {
+  shape?: "torus" | "icosahedron" | "octahedron" | "torusKnot";
+  size?: "sm" | "md" | "lg";
+  color?: string;
+  class?: string;
+}
+
+const {
+  shape = "icosahedron",
+  size = "md",
+  color = "#00d4e5",
+  class: className = "",
+} = Astro.props;
+
+const sizes = {
+  sm: "size-32",
+  md: "size-48",
+  lg: "size-72",
+};
+---
+
+<div
+  class:list={["holo-object relative inline-flex items-center justify-center", sizes[size], className]}
+  data-shape={shape}
+  data-color={color}
+>
+  <canvas class="holo-canvas absolute inset-0 w-full h-full"></canvas>
+</div>
+
+<script>
+  import * as THREE from "three";
+
+  document.querySelectorAll<HTMLElement>(".holo-object").forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>(".holo-canvas");
+    if (!canvas) return;
+
+    const shape = container.dataset.shape || "icosahedron";
+    const color = container.dataset.color || "#00d4e5";
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    camera.position.z = 3.5;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const threeColor = new THREE.Color(color);
+
+    // Create geometry based on shape
+    let geometry: THREE.BufferGeometry;
+    switch (shape) {
+      case "torus":
+        geometry = new THREE.TorusGeometry(0.8, 0.3, 16, 32);
+        break;
+      case "octahedron":
+        geometry = new THREE.OctahedronGeometry(1, 0);
+        break;
+      case "torusKnot":
+        geometry = new THREE.TorusKnotGeometry(0.6, 0.2, 64, 8);
+        break;
+      default:
+        geometry = new THREE.IcosahedronGeometry(1, 1);
+    }
+
+    // Wireframe
+    const wireframe = new THREE.LineSegments(
+      new THREE.WireframeGeometry(geometry),
+      new THREE.LineBasicMaterial({
+        color: threeColor,
+        transparent: true,
+        opacity: 0.4,
+      }),
+    );
+    scene.add(wireframe);
+
+    // Solid faces with low opacity
+    const solid = new THREE.Mesh(
+      geometry,
+      new THREE.MeshBasicMaterial({
+        color: threeColor,
+        transparent: true,
+        opacity: 0.05,
+        side: THREE.DoubleSide,
+      }),
+    );
+    scene.add(solid);
+
+    // Vertices as points
+    const pointsMat = new THREE.PointsMaterial({
+      color: threeColor,
+      size: 0.05,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true,
+    });
+    const points = new THREE.Points(geometry, pointsMat);
+    scene.add(points);
+
+    // Mouse interaction
+    let mouseX = 0, mouseY = 0;
+    container.addEventListener("mousemove", (e) => {
+      const rect = container.getBoundingClientRect();
+      mouseX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+      mouseY = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+    });
+    container.addEventListener("mouseleave", () => {
+      mouseX = 0;
+      mouseY = 0;
+    });
+
+    function resize() {
+      const rect = container.getBoundingClientRect();
+      const s = Math.min(rect.width, rect.height);
+      renderer.setSize(s, s);
+    }
+
+    function animate() {
+      wireframe.rotation.y += 0.005;
+      wireframe.rotation.x += 0.002;
+      solid.rotation.copy(wireframe.rotation);
+      points.rotation.copy(wireframe.rotation);
+
+      // Mouse tilt
+      wireframe.rotation.x += (mouseY * 0.5 - wireframe.rotation.x) * 0.02;
+      wireframe.rotation.y += (mouseX * 0.5 - wireframe.rotation.y) * 0.02;
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    animate();
+    const resizeObserver = new ResizeObserver(() => resize());
+    resizeObserver.observe(container);
+  });
+</script>

@@ -1,0 +1,329 @@
+---
+/**
+ * Renders a live demo for a component based on its slug.
+ * Each component gets a hand-crafted demo with realistic data.
+ */
+import type { ComponentMeta } from "../../data/components";
+
+// UI components
+import GlassPanel from "../ui/panels/GlassPanel.astro";
+import HoloCard from "../ui/panels/HoloCard.astro";
+import TerminalPanel from "../ui/panels/TerminalPanel.astro";
+import NeonButton from "../ui/controls/NeonButton.astro";
+import HoloToggle from "../ui/controls/HoloToggle.astro";
+import CyberSlider from "../ui/controls/CyberSlider.astro";
+import GlitchText from "../ui/typography/GlitchText.astro";
+import TypeWriter from "../ui/typography/TypeWriter.astro";
+import HoloHeading from "../ui/typography/HoloHeading.astro";
+import StatusIndicator from "../ui/feedback/StatusIndicator.astro";
+import AlertBanner from "../ui/feedback/AlertBanner.astro";
+import LoadingSpinner from "../ui/feedback/LoadingSpinner.astro";
+import HudFrame from "../ui/hud/HudFrame.astro";
+import HudReticle from "../ui/hud/HudReticle.astro";
+import HudCompass from "../ui/hud/HudCompass.astro";
+import StatCounter from "../ui/data/StatCounter.astro";
+import ProgressArc from "../ui/data/ProgressArc.astro";
+import RadarSweep from "../ui/data/RadarSweep.astro";
+import HoloGlobe from "../ui/data/HoloGlobe.astro";
+import HoloObject from "../ui/data/HoloObject.astro";
+import WaveformDisplay from "../ui/data/WaveformDisplay.astro";
+import DataGrid from "../ui/data/DataGrid.astro";
+import ParticleField from "../ui/decorative/ParticleField.astro";
+import ScanLine from "../ui/decorative/ScanLine.astro";
+import GridOverlay from "../ui/decorative/GridOverlay.astro";
+import CircuitPattern from "../ui/decorative/CircuitPattern.astro";
+import HudNav from "../ui/navigation/HudNav.astro";
+
+interface Props {
+  component: ComponentMeta;
+}
+
+const { component } = Astro.props;
+const slug = component.slug;
+---
+
+<div class="component-demo">
+  {/* === HUD === */}
+  {slug === "hud-frame" && (
+    <HudFrame title="SYSTEM STATUS" status="NOMINAL // ALL CLEAR">
+      <div class="grid grid-cols-3 gap-4 text-center">
+        <div>
+          <p class="font-mono text-[10px] text-cyber-600">PWR</p>
+          <p class="font-display text-lg text-status-400">98.2%</p>
+        </div>
+        <div>
+          <p class="font-mono text-[10px] text-cyber-600">TEMP</p>
+          <p class="font-display text-lg text-cyber-300">42.7°C</p>
+        </div>
+        <div>
+          <p class="font-mono text-[10px] text-cyber-600">LOAD</p>
+          <p class="font-display text-lg text-alert-400">67.3%</p>
+        </div>
+      </div>
+    </HudFrame>
+  )}
+
+  {slug === "hud-reticle" && (
+    <div class="flex items-center justify-center py-6">
+      <HudReticle size="lg" />
+    </div>
+  )}
+
+  {slug === "hud-compass" && (
+    <HudCompass heading={127} />
+  )}
+
+  {/* === Panels === */}
+  {slug === "glass-panel" && (
+    <div class="space-y-3">
+      <GlassPanel variant="default" glow>
+        <p class="font-mono text-xs text-cyber-400">Default variant with glow</p>
+      </GlassPanel>
+      <GlassPanel variant="alert">
+        <p class="font-mono text-xs text-alert-400">Alert variant</p>
+      </GlassPanel>
+      <GlassPanel variant="holo">
+        <p class="font-mono text-xs text-holo-400">Holo variant</p>
+      </GlassPanel>
+      <GlassPanel variant="danger">
+        <p class="font-mono text-xs text-danger-400">Danger variant</p>
+      </GlassPanel>
+      <GlassPanel variant="bio">
+        <p class="font-mono text-xs text-bio-400">Bio variant</p>
+      </GlassPanel>
+    </div>
+  )}
+
+  {slug === "holo-card" && (
+    <HoloCard title="ANALYSIS REPORT">
+      <p class="font-ui text-sm text-cyber-400 mb-3">
+        ホバーすると虹色のシマーエフェクトが走ります。
+      </p>
+      <div class="flex gap-4">
+        <StatCounter value={1247} label="EVENTS" />
+        <StatCounter value={99.8} label="UPTIME" unit="%" decimals={1} />
+      </div>
+    </HoloCard>
+  )}
+
+  {slug === "terminal-panel" && (
+    <TerminalPanel title="SYS.LOG">
+      <p><span class="text-status-500">$</span> system --check all</p>
+      <p class="text-cyber-600 mt-1">[INFO] Running diagnostics...</p>
+      <p class="text-status-400 mt-1">[OK] Core systems: nominal</p>
+      <p class="text-status-400">[OK] Network: connected</p>
+      <p class="text-alert-400">[WARN] Memory: 87% used</p>
+      <p class="text-cyber-600 mt-1">[INFO] All checks complete.</p>
+    </TerminalPanel>
+  )}
+
+  {/* === Data Display === */}
+  {slug === "stat-counter" && (
+    <div class="grid grid-cols-3 gap-6">
+      <StatCounter value={14892} label="TOTAL NODES" />
+      <StatCounter value={99.97} label="UPTIME" unit="%" decimals={2} />
+      <StatCounter value={342} label="LATENCY" unit=" ms" />
+    </div>
+  )}
+
+  {slug === "progress-arc" && (
+    <div class="flex items-center justify-center gap-6 flex-wrap">
+      <ProgressArc value={78} label="CPU" />
+      <ProgressArc value={45} label="MEM" variant="status" />
+      <ProgressArc value={92} label="DISK" variant="alert" />
+      <ProgressArc value={15} label="NET" variant="danger" />
+    </div>
+  )}
+
+  {slug === "radar-sweep" && (
+    <div class="flex items-center justify-center h-72">
+      <RadarSweep
+        size="lg"
+        blips={[
+          { angle: 45, distance: 60 },
+          { angle: 150, distance: 40 },
+          { angle: 220, distance: 75 },
+          { angle: 310, distance: 30 },
+          { angle: 85, distance: 55 },
+        ]}
+      />
+    </div>
+  )}
+
+  {slug === "holo-globe" && (
+    <div class="flex items-center justify-center h-72">
+      <HoloGlobe size="lg" />
+    </div>
+  )}
+
+  {slug === "holo-object" && (
+    <div class="flex items-center justify-center gap-6 flex-wrap h-72">
+      <HoloObject shape="icosahedron" size="sm" />
+      <HoloObject shape="torusKnot" size="sm" color="#4488ff" />
+      <HoloObject shape="octahedron" size="sm" color="#aa44ff" />
+      <HoloObject shape="torus" size="sm" color="#00e577" />
+    </div>
+  )}
+
+  {slug === "waveform-display" && (
+    <div class="space-y-4">
+      <WaveformDisplay bars={48} />
+      <WaveformDisplay bars={32} variant="holo" />
+    </div>
+  )}
+
+  {slug === "data-grid" && (
+    <DataGrid
+      columns={["NODE", "STATUS", "LATENCY", "LOAD"]}
+      rows={[
+        ["NODE-ALPHA", "ACTIVE", "12ms", "34%"],
+        ["NODE-BETA", "ACTIVE", "8ms", "67%"],
+        ["NODE-GAMMA", "STANDBY", "---", "0%"],
+        ["NODE-DELTA", "ACTIVE", "23ms", "89%"],
+        ["NODE-EPSILON", "WARNING", "145ms", "95%"],
+      ]}
+    />
+  )}
+
+  {/* === Controls === */}
+  {slug === "neon-button" && (
+    <div class="space-y-4">
+      <div class="flex flex-wrap items-center gap-3">
+        <NeonButton>Default</NeonButton>
+        <NeonButton variant="alert">Alert</NeonButton>
+        <NeonButton variant="danger">Danger</NeonButton>
+        <NeonButton variant="status">Status</NeonButton>
+        <NeonButton variant="holo">Holo</NeonButton>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <NeonButton size="sm">Small</NeonButton>
+        <NeonButton size="md">Medium</NeonButton>
+        <NeonButton size="lg">Large</NeonButton>
+      </div>
+    </div>
+  )}
+
+  {slug === "holo-toggle" && (
+    <div class="flex flex-wrap items-center gap-6">
+      <HoloToggle label="SHIELDS" checked />
+      <HoloToggle label="WEAPONS" />
+      <HoloToggle label="STEALTH" checked />
+    </div>
+  )}
+
+  {slug === "cyber-slider" && (
+    <div class="space-y-5">
+      <CyberSlider label="POWER OUTPUT" value={72} unit="%" />
+      <CyberSlider label="FREQUENCY" min={88} max={108} value={97} unit=" MHz" />
+    </div>
+  )}
+
+  {/* === Navigation === */}
+  {slug === "hud-nav" && (
+    <HudNav
+      items={[
+        { label: "DASHBOARD", href: "#", active: true },
+        { label: "SYSTEMS", href: "#" },
+        { label: "SENSORS", href: "#" },
+        { label: "COMMS", href: "#" },
+        { label: "LOGS", href: "#" },
+      ]}
+    />
+  )}
+
+  {/* === Feedback === */}
+  {slug === "status-indicator" && (
+    <div class="flex flex-wrap items-center gap-6">
+      <StatusIndicator status="online" />
+      <StatusIndicator status="warning" />
+      <StatusIndicator status="error" />
+      <StatusIndicator status="offline" />
+    </div>
+  )}
+
+  {slug === "alert-banner" && (
+    <div class="space-y-3">
+      <AlertBanner variant="info">
+        <strong>INFO:</strong> System diagnostics complete. All modules nominal.
+      </AlertBanner>
+      <AlertBanner variant="warning" dismissible>
+        <strong>WARNING:</strong> Memory usage exceeding 85% threshold.
+      </AlertBanner>
+      <AlertBanner variant="danger" dismissible>
+        <strong>CRITICAL:</strong> Shield generator offline.
+      </AlertBanner>
+    </div>
+  )}
+
+  {slug === "loading-spinner" && (
+    <div class="flex items-center justify-center gap-8">
+      <LoadingSpinner size="sm" />
+      <LoadingSpinner size="md" label="LOADING" />
+      <LoadingSpinner size="lg" label="PROCESSING" />
+    </div>
+  )}
+
+  {/* === Typography === */}
+  {slug === "glitch-text" && (
+    <div class="space-y-4 py-4">
+      <GlitchText text="SYSTEM BREACH" tag="h2" class="text-2xl text-cyber-200" />
+      <GlitchText text="WARNING: INTRUSION DETECTED" tag="h3" class="text-lg text-danger-400" />
+    </div>
+  )}
+
+  {slug === "typewriter" && (
+    <TypeWriter
+      lines={[
+        "Initializing neural interface...",
+        "Connecting to mainframe...",
+        "Access granted. Welcome, Operator.",
+        "All systems nominal.",
+      ]}
+    />
+  )}
+
+  {slug === "holo-heading" && (
+    <div class="space-y-6 py-4">
+      <HoloHeading tag="h1" class="text-3xl text-cyber-200">System Interface</HoloHeading>
+      <HoloHeading tag="h2" class="text-xl text-holo-300">Subsystem Module Alpha</HoloHeading>
+    </div>
+  )}
+
+  {/* === Decorative === */}
+  {slug === "particle-field" && (
+    <ParticleField count={150} class="h-72 border border-cyber-800/20" />
+  )}
+
+  {slug === "scan-line" && (
+    <div class="relative h-40 border border-cyber-800/20 bg-void-600/30 overflow-hidden flex items-center justify-center">
+      <p class="font-display text-sm text-cyber-500 tracking-widest uppercase z-10">Scan Line Effect</p>
+      <div class="absolute inset-0 overflow-hidden">
+        <div
+          class="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-cyber-500/40 to-transparent"
+          style="animation: scan-line-demo 3s linear infinite;"
+        ></div>
+      </div>
+    </div>
+  )}
+
+  {slug === "grid-overlay" && (
+    <div class="relative h-40 border border-cyber-800/20 overflow-hidden flex items-center justify-center effect-grid">
+      <p class="font-display text-sm text-cyber-500 tracking-widest uppercase">Grid Overlay</p>
+    </div>
+  )}
+
+  {slug === "circuit-pattern" && (
+    <CircuitPattern class="h-40 border border-cyber-800/20 bg-void-600/30">
+      <div class="relative z-10 h-full flex items-center justify-center">
+        <p class="font-display text-sm text-cyber-500 tracking-widest uppercase">Circuit Pattern Background</p>
+      </div>
+    </CircuitPattern>
+  )}
+</div>
+
+<style>
+  @keyframes scan-line-demo {
+    0% { top: -2px; }
+    100% { top: 100%; }
+  }
+</style>

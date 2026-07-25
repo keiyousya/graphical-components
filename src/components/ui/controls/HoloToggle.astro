@@ -1,0 +1,35 @@
+---
+interface Props {
+  label?: string;
+  checked?: boolean;
+  class?: string;
+}
+
+const { label, checked = false, class: className = "" } = Astro.props;
+---
+
+<label class:list={["holo-toggle group inline-flex items-center gap-3 cursor-pointer select-none", className]}>
+  <div class="relative">
+    <input
+      type="checkbox"
+      checked={checked}
+      class="peer sr-only"
+    />
+    <!-- Track -->
+    <div class="w-12 h-6 border border-cyber-700/50 bg-void-600/80 transition-all duration-300 peer-checked:border-cyber-500/60 peer-checked:bg-cyber-900/40 peer-checked:shadow-glow-sm">
+      <!-- Grid lines -->
+      <div class="absolute inset-0.5 opacity-20">
+        <div class="h-full w-full bg-[repeating-linear-gradient(90deg,transparent,transparent_3px,oklch(0.55_0.18_195/0.3)_3px,oklch(0.55_0.18_195/0.3)_4px)]"></div>
+      </div>
+    </div>
+    <!-- Thumb -->
+    <div class="absolute top-0.5 left-0.5 size-5 border border-cyber-600/50 bg-void-300 transition-all duration-300 peer-checked:translate-x-6 peer-checked:border-cyber-400 peer-checked:bg-cyber-500/30 peer-checked:shadow-glow-sm">
+      <div class="absolute inset-1 border border-cyber-700/30 peer-checked:border-cyber-400/50"></div>
+    </div>
+  </div>
+  {label && (
+    <span class="font-mono text-xs text-cyber-500 uppercase tracking-wider group-hover:text-cyber-400 transition-colors">
+      {label}
+    </span>
+  )}
+</label>

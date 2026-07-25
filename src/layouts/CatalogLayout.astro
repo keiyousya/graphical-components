@@ -1,0 +1,61 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import CategoryNav from "../components/catalog/CategoryNav.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="flex min-h-dvh">
+    <!-- Sidebar -->
+    <aside
+      class="hidden lg:flex w-64 shrink-0 flex-col border-r border-cyber-800/50 bg-void-600/80 backdrop-blur-sm"
+    >
+      <!-- Logo -->
+      <a
+        href="/"
+        class="flex items-center gap-3 border-b border-cyber-800/50 px-5 py-4"
+      >
+        <div class="size-8 rounded-sm bg-cyber-500/20 effect-neon-border grid place-items-center">
+          <span class="text-cyber-400 font-display text-xs font-bold">GC</span>
+        </div>
+        <span class="font-display text-sm tracking-widest text-cyber-300 uppercase"
+          >Components</span
+        >
+      </a>
+
+      <!-- Navigation -->
+      <nav class="flex-1 overflow-y-auto p-4">
+        <CategoryNav />
+      </nav>
+
+      <!-- Footer -->
+      <div class="border-t border-cyber-800/50 px-5 py-3">
+        <p class="font-mono text-[10px] text-cyber-700 uppercase tracking-widest">
+          SYS.STATUS: <span class="text-status-500">ONLINE</span>
+        </p>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto">
+      <!-- Mobile Header -->
+      <header
+        class="lg:hidden sticky top-0 z-40 flex items-center gap-3 border-b border-cyber-800/50 bg-void-600/90 backdrop-blur-md px-4 py-3"
+      >
+        <a href="/" class="font-display text-sm tracking-widest text-cyber-300 uppercase">
+          GC
+        </a>
+      </header>
+
+      <div class="p-6 lg:p-10">
+        <slot />
+      </div>
+    </main>
+  </div>
+</BaseLayout>

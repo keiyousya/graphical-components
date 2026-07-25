@@ -1,0 +1,173 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg";
+  wireframe?: boolean;
+  class?: string;
+}
+
+const {
+  size = "md",
+  wireframe = true,
+  class: className = "",
+} = Astro.props;
+
+const sizes = {
+  sm: "size-40",
+  md: "size-64",
+  lg: "size-96",
+};
+---
+
+<div
+  class:list={["holo-globe relative inline-flex items-center justify-center", sizes[size], className]}
+  data-wireframe={wireframe}
+>
+  <canvas class="globe-canvas absolute inset-0 w-full h-full"></canvas>
+</div>
+
+<script>
+  import * as THREE from "three";
+
+  document.querySelectorAll<HTMLElement>(".holo-globe").forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>(".globe-canvas");
+    if (!canvas) return;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    camera.position.z = 3.5;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const cyberColor = 0x00d4e5;
+    const holoColor = 0x4488ff;
+
+    // Globe wireframe
+    const globeGeo = new THREE.SphereGeometry(1, 32, 24);
+    const globeMat = new THREE.MeshBasicMaterial({
+      color: cyberColor,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.15,
+    });
+    const globe = new THREE.Mesh(globeGeo, globeMat);
+    scene.add(globe);
+
+    // Longitude highlight lines
+    for (let i = 0; i < 6; i++) {
+      const curve = new THREE.EllipseCurve(0, 0, 1.01, 1.01, 0, Math.PI * 2, false, 0);
+      const pts = curve.getPoints(64);
+      const geo = new THREE.BufferGeometry().setFromPoints(
+        pts.map((p) => new THREE.Vector3(p.x, p.y, 0)),
+      );
+      const mat = new THREE.LineBasicMaterial({
+        color: cyberColor,
+        transparent: true,
+        opacity: 0.25,
+      });
+      const line = new THREE.Line(geo, mat);
+      line.rotation.y = (i * Math.PI) / 6;
+      scene.add(line);
+    }
+
+    // Latitude highlight lines
+    for (let lat = -60; lat <= 60; lat += 30) {
+      const r = Math.cos((lat * Math.PI) / 180) * 1.01;
+      const y = Math.sin((lat * Math.PI) / 180) * 1.01;
+      const curve = new THREE.EllipseCurve(0, 0, r, r, 0, Math.PI * 2, false, 0);
+      const pts = curve.getPoints(64);
+      const geo = new THREE.BufferGeometry().setFromPoints(
+        pts.map((p) => new THREE.Vector3(p.x, y, p.y)),
+      );
+      const mat = new THREE.LineBasicMaterial({
+        color: cyberColor,
+        transparent: true,
+        opacity: 0.2,
+      });
+      scene.add(new THREE.Line(geo, mat));
+    }
+
+    // Equator ring (brighter)
+    const eqCurve = new THREE.EllipseCurve(0, 0, 1.02, 1.02, 0, Math.PI * 2, false, 0);
+    const eqPts = eqCurve.getPoints(128);
+    const eqGeo = new THREE.BufferGeometry().setFromPoints(
+      eqPts.map((p) => new THREE.Vector3(p.x, 0, p.y)),
+    );
+    const eqMat = new THREE.LineBasicMaterial({
+      color: cyberColor,
+      transparent: true,
+      opacity: 0.5,
+    });
+    scene.add(new THREE.Line(eqGeo, eqMat));
+
+    // Glowing points on surface
+    const pointCount = 40;
+    const pointGeo = new THREE.BufferGeometry();
+    const pointPositions = new Float32Array(pointCount * 3);
+    for (let i = 0; i < pointCount; i++) {
+      const phi = Math.acos(2 * Math.random() - 1);
+      const theta = Math.random() * Math.PI * 2;
+      pointPositions[i * 3] = Math.sin(phi) * Math.cos(theta) * 1.03;
+      pointPositions[i * 3 + 1] = Math.cos(phi) * 1.03;
+      pointPositions[i * 3 + 2] = Math.sin(phi) * Math.sin(theta) * 1.03;
+    }
+    pointGeo.setAttribute("position", new THREE.BufferAttribute(pointPositions, 3));
+    const pointMat = new THREE.PointsMaterial({
+      color: holoColor,
+      size: 0.04,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true,
+    });
+    const points = new THREE.Points(pointGeo, pointMat);
+    scene.add(points);
+
+    // Outer atmosphere ring
+    const atmosGeo = new THREE.RingGeometry(1.15, 1.18, 64);
+    const atmosMat = new THREE.MeshBasicMaterial({
+      color: cyberColor,
+      transparent: true,
+      opacity: 0.08,
+      side: THREE.DoubleSide,
+    });
+    const atmos = new THREE.Mesh(atmosGeo, atmosMat);
+    atmos.rotation.x = Math.PI / 2;
+    scene.add(atmos);
+
+    // Mouse interaction
+    let mouseX = 0, mouseY = 0;
+    container.addEventListener("mousemove", (e) => {
+      const rect = container.getBoundingClientRect();
+      mouseX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+      mouseY = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+    });
+
+    function resize() {
+      const rect = container.getBoundingClientRect();
+      const s = Math.min(rect.width, rect.height);
+      renderer.setSize(s, s);
+      canvas.style.left = `${(rect.width - s) / 2}px`;
+      canvas.style.top = `${(rect.height - s) / 2}px`;
+    }
+
+    function animate() {
+      globe.rotation.y += 0.003;
+      points.rotation.y += 0.003;
+
+      // Tilt based on mouse
+      globe.rotation.x += (mouseY * 0.3 - globe.rotation.x) * 0.05;
+      points.rotation.x = globe.rotation.x;
+
+      atmos.rotation.z += 0.002;
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    animate();
+    const resizeObserver = new ResizeObserver(() => resize());
+    resizeObserver.observe(container);
+  });
+</script>

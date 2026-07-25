@@ -1,0 +1,74 @@
+---
+interface Props {
+  variant?: "info" | "warning" | "danger";
+  dismissible?: boolean;
+  class?: string;
+}
+
+const { variant = "info", dismissible = false, class: className = "" } = Astro.props;
+
+const styles = {
+  info: {
+    border: "border-cyber-500/30",
+    bg: "bg-cyber-900/20",
+    icon: "text-cyber-500",
+    text: "text-cyber-300",
+    glow: "shadow-glow-sm",
+  },
+  warning: {
+    border: "border-alert-500/30",
+    bg: "bg-alert-900/20",
+    icon: "text-alert-500",
+    text: "text-alert-300",
+    glow: "shadow-glow-alert",
+  },
+  danger: {
+    border: "border-danger-500/30",
+    bg: "bg-danger-900/20",
+    icon: "text-danger-500",
+    text: "text-danger-300",
+    glow: "shadow-glow-danger",
+  },
+};
+
+const s = styles[variant];
+
+const icons = {
+  info: "&#9432;",
+  warning: "&#9888;",
+  danger: "&#9762;",
+};
+---
+
+<div
+  class:list={[
+    "alert-banner relative flex items-start gap-3 border px-4 py-3",
+    s.border, s.bg, s.glow,
+    className,
+  ]}
+  role="alert"
+>
+  <span class:list={["text-lg mt-0.5 shrink-0 animate-pulse-glow", s.icon]} set:html={icons[variant]} />
+  <div class:list={["flex-1 font-ui text-sm", s.text]}>
+    <slot />
+  </div>
+  {dismissible && (
+    <button class="alert-dismiss shrink-0 text-cyber-600 hover:text-cyber-400 transition-colors font-mono text-xs cursor-pointer">
+      &#x2715;
+    </button>
+  )}
+</div>
+
+<script>
+  document.querySelectorAll(".alert-banner").forEach((banner) => {
+    const btn = banner.querySelector(".alert-dismiss");
+    if (btn) {
+      btn.addEventListener("click", () => {
+        (banner as HTMLElement).style.opacity = "0";
+        (banner as HTMLElement).style.transform = "translateY(-8px)";
+        (banner as HTMLElement).style.transition = "all 0.3s ease";
+        setTimeout(() => banner.remove(), 300);
+      });
+    }
+  });
+</script>

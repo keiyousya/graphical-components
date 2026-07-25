@@ -1,0 +1,42 @@
+---
+import type { PropDef } from "../../data/components";
+
+interface Props {
+  props: PropDef[];
+}
+
+const { props } = Astro.props;
+---
+
+{props.length > 0 ? (
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse font-mono text-xs">
+      <thead>
+        <tr class="border-b border-cyber-500/30">
+          <th class="px-4 py-2 text-left font-display text-[10px] tracking-widest text-cyber-500 uppercase">Prop</th>
+          <th class="px-4 py-2 text-left font-display text-[10px] tracking-widest text-cyber-500 uppercase">Type</th>
+          <th class="px-4 py-2 text-left font-display text-[10px] tracking-widest text-cyber-500 uppercase">Default</th>
+          <th class="px-4 py-2 text-left font-display text-[10px] tracking-widest text-cyber-500 uppercase">Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {props.map((prop, i) => (
+          <tr class:list={[
+            "border-b border-cyber-800/20 transition-colors hover:bg-cyber-500/5",
+            i % 2 === 0 ? "bg-void-500/20" : "bg-void-500/40",
+          ]}>
+            <td class="px-4 py-2 text-cyber-300">
+              {prop.name}
+              {prop.required && <span class="text-danger-500 ml-0.5">*</span>}
+            </td>
+            <td class="px-4 py-2 text-holo-400">{prop.type}</td>
+            <td class="px-4 py-2 text-cyber-600">{prop.default || "—"}</td>
+            <td class="px-4 py-2 text-cyber-500 font-ui">{prop.description}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+) : (
+  <p class="font-mono text-xs text-cyber-700">// NO PROPS</p>
+)}

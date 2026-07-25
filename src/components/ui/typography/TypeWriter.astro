@@ -1,0 +1,69 @@
+---
+interface Props {
+  lines: string[];
+  prefix?: string;
+  class?: string;
+}
+
+const { lines, prefix = ">_", class: className = "" } = Astro.props;
+---
+
+<div class:list={["typewriter font-mono text-sm", className]} data-lines={JSON.stringify(lines)} data-prefix={prefix}>
+  <span class="text-cyber-600">{prefix}</span>
+  <span class="typewriter-text text-cyber-300"></span>
+  <span class="typewriter-cursor text-cyber-500">&#x2588;</span>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>(".typewriter").forEach((el) => {
+    const lines: string[] = JSON.parse(el.dataset.lines || "[]");
+    const prefix = el.dataset.prefix || ">_";
+    const textEl = el.querySelector<HTMLElement>(".typewriter-text");
+    const cursorEl = el.querySelector<HTMLElement>(".typewriter-cursor");
+    if (!textEl || !cursorEl || lines.length === 0) return;
+
+    let lineIdx = 0;
+    let charIdx = 0;
+    let isDeleting = false;
+    let timeout: ReturnType<typeof setTimeout>;
+
+    // Cursor blink
+    cursorEl.style.animation = "blink-caret 0.75s step-end infinite";
+
+    function tick() {
+      const current = lines[lineIdx];
+      if (!isDeleting) {
+        textEl!.textContent = current.slice(0, charIdx + 1);
+        charIdx++;
+        if (charIdx >= current.length) {
+          timeout = setTimeout(() => {
+            isDeleting = true;
+            tick();
+          }, 2000);
+          return;
+        }
+        timeout = setTimeout(tick, 40 + Math.random() * 60);
+      } else {
+        textEl!.textContent = current.slice(0, charIdx);
+        charIdx--;
+        if (charIdx < 0) {
+          isDeleting = false;
+          charIdx = 0;
+          lineIdx = (lineIdx + 1) % lines.length;
+          timeout = setTimeout(tick, 500);
+          return;
+        }
+        timeout = setTimeout(tick, 25);
+      }
+    }
+
+    tick();
+  });
+</script>
+
+<style>
+  @keyframes blink-caret {
+    from, to { opacity: 1; }
+    50% { opacity: 0; }
+  }
+</style>

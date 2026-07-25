@@ -1,0 +1,21 @@
+---
+interface Props {
+  title: string;
+  label?: string;
+  class?: string;
+}
+
+const { title, label, class: className = "" } = Astro.props;
+---
+
+<div class:list={["demo-block", className]}>
+  <div class="flex items-center gap-3 mb-3">
+    <div class="size-1.5 bg-cyber-600"></div>
+    <h3 class="font-display text-xs tracking-widest text-cyber-400 uppercase">{title}</h3>
+    {label && (
+      <span class="font-mono text-[10px] text-cyber-700">{label}</span>
+    )}
+    <div class="h-px flex-1 bg-cyber-800/20"></div>
+  </div>
+  <slot />
+</div>

@@ -1,0 +1,40 @@
+---
+interface Props {
+  columns: string[];
+  rows: string[][];
+  class?: string;
+}
+
+const { columns, rows, class: className = "" } = Astro.props;
+---
+
+<div class:list={["data-grid overflow-x-auto", className]}>
+  <table class="w-full border-collapse font-mono text-xs">
+    <thead>
+      <tr class="border-b border-cyber-500/30">
+        {columns.map((col) => (
+          <th class="px-4 py-2 text-left font-display text-[10px] tracking-widest text-cyber-500 uppercase">
+            {col}
+          </th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((row, i) => (
+        <tr class:list={[
+          "border-b border-cyber-800/20 transition-colors hover:bg-cyber-500/5",
+          i % 2 === 0 ? "bg-void-500/20" : "bg-void-500/40",
+        ]}>
+          {row.map((cell, j) => (
+            <td class:list={[
+              "px-4 py-2",
+              j === 0 ? "text-cyber-300" : "text-cyber-500",
+            ]}>
+              {cell}
+            </td>
+          ))}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>

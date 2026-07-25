@@ -1,0 +1,67 @@
+---
+interface Props {
+  bars?: number;
+  animated?: boolean;
+  variant?: "default" | "holo" | "bio";
+  class?: string;
+}
+
+const {
+  bars = 32,
+  animated = true,
+  variant = "default",
+  class: className = "",
+} = Astro.props;
+
+const colors = {
+  default: "cyber",
+  holo: "holo",
+  bio: "bio",
+};
+const c = colors[variant];
+---
+
+<div
+  class:list={["waveform-display flex items-end gap-px h-16", className]}
+  data-bars={bars}
+  data-animated={animated}
+  data-variant={c}
+>
+  {Array.from({ length: bars }).map((_, i) => {
+    const h = 20 + Math.sin(i * 0.5) * 40 + Math.random() * 30;
+    return (
+      <div
+        class:list={[
+          "waveform-bar flex-1 min-w-[2px] transition-all duration-150",
+          `bg-${c}-500/60`,
+        ]}
+        style={`height: ${h}%; box-shadow: 0 0 4px oklch(0.55 0.18 195 / 0.3);`}
+      />
+    );
+  })}
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>(".waveform-display").forEach((el) => {
+    const animated = el.dataset.animated !== "false";
+    if (!animated) return;
+
+    const bars = el.querySelectorAll<HTMLElement>(".waveform-bar");
+    const barCount = bars.length;
+    let frame = 0;
+
+    function animate() {
+      frame += 0.05;
+      bars.forEach((bar, i) => {
+        const h =
+          30 +
+          Math.sin(frame + i * 0.3) * 25 +
+          Math.sin(frame * 1.7 + i * 0.5) * 15 +
+          Math.sin(frame * 0.5 + i * 0.7) * 10;
+        bar.style.height = `${Math.max(5, Math.min(95, h))}%`;
+      });
+      requestAnimationFrame(animate);
+    }
+    animate();
+  });
+</script>

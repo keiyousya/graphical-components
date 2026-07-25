@@ -1,0 +1,406 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import GlassPanel from "../components/ui/panels/GlassPanel.astro";
+import HoloCard from "../components/ui/panels/HoloCard.astro";
+import TerminalPanel from "../components/ui/panels/TerminalPanel.astro";
+import NeonButton from "../components/ui/controls/NeonButton.astro";
+import HoloToggle from "../components/ui/controls/HoloToggle.astro";
+import CyberSlider from "../components/ui/controls/CyberSlider.astro";
+import GlitchText from "../components/ui/typography/GlitchText.astro";
+import TypeWriter from "../components/ui/typography/TypeWriter.astro";
+import HoloHeading from "../components/ui/typography/HoloHeading.astro";
+import StatusIndicator from "../components/ui/feedback/StatusIndicator.astro";
+import AlertBanner from "../components/ui/feedback/AlertBanner.astro";
+import LoadingSpinner from "../components/ui/feedback/LoadingSpinner.astro";
+import HudFrame from "../components/ui/hud/HudFrame.astro";
+import HudReticle from "../components/ui/hud/HudReticle.astro";
+import HudCompass from "../components/ui/hud/HudCompass.astro";
+import StatCounter from "../components/ui/data/StatCounter.astro";
+import ProgressArc from "../components/ui/data/ProgressArc.astro";
+import RadarSweep from "../components/ui/data/RadarSweep.astro";
+import HoloGlobe from "../components/ui/data/HoloGlobe.astro";
+import HoloObject from "../components/ui/data/HoloObject.astro";
+import WaveformDisplay from "../components/ui/data/WaveformDisplay.astro";
+import DataGrid from "../components/ui/data/DataGrid.astro";
+import ParticleField from "../components/ui/decorative/ParticleField.astro";
+import CircuitPattern from "../components/ui/decorative/CircuitPattern.astro";
+import HudNav from "../components/ui/navigation/HudNav.astro";
+import SectionTitle from "../components/catalog/SectionTitle.astro";
+import DemoBlock from "../components/catalog/DemoBlock.astro";
+---
+
+<BaseLayout title="Showcase | Graphical Components">
+  <div class="relative effect-grid min-h-dvh">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 border-b border-cyber-800/40 bg-void-600/80 backdrop-blur-md px-6 py-3">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <a href="/" class="flex items-center gap-3">
+          <div class="size-2 rounded-full bg-status-500 shadow-glow-status animate-pulse-glow"></div>
+          <span class="font-display text-xs tracking-[0.2em] text-cyber-400 uppercase">Graphical Components</span>
+        </a>
+        <nav class="flex items-center gap-4 font-mono text-[10px] text-cyber-600">
+          <a href="/" class="hover:text-cyber-400 transition-colors">HOME</a>
+          <a href="/showcase" class="text-cyber-400">SHOWCASE</a>
+          <a href="/components" class="hover:text-cyber-400 transition-colors">CATALOG</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-12 space-y-20">
+
+      <!-- ======================== -->
+      <!-- SECTION: 3D / Three.js   -->
+      <!-- ======================== -->
+      <section>
+        <SectionTitle title="3D Components" subtitle="THREE.JS POWERED" />
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Particle Field -->
+          <DemoBlock title="Particle Field" label="パーティクルフィールド">
+            <ParticleField count={150} class="h-72 border border-cyber-800/20" />
+          </DemoBlock>
+
+          <!-- Holo Globe -->
+          <DemoBlock title="Holo Globe" label="ホログローブ">
+            <div class="flex items-center justify-center h-72 border border-cyber-800/20 bg-void-600/30">
+              <HoloGlobe size="lg" />
+            </div>
+          </DemoBlock>
+
+          <!-- Radar Sweep -->
+          <DemoBlock title="Radar Sweep" label="レーダースイープ">
+            <div class="flex items-center justify-center h-72 border border-cyber-800/20 bg-void-600/30">
+              <RadarSweep
+                size="lg"
+                blips={[
+                  { angle: 45, distance: 60 },
+                  { angle: 150, distance: 40 },
+                  { angle: 220, distance: 75 },
+                  { angle: 310, distance: 30 },
+                  { angle: 85, distance: 55 },
+                ]}
+              />
+            </div>
+          </DemoBlock>
+
+          <!-- Holo Objects -->
+          <DemoBlock title="Holo Objects" label="ホロオブジェクト">
+            <div class="flex items-center justify-center gap-6 h-72 border border-cyber-800/20 bg-void-600/30 flex-wrap">
+              <HoloObject shape="icosahedron" size="sm" />
+              <HoloObject shape="torusKnot" size="sm" color="#4488ff" />
+              <HoloObject shape="octahedron" size="sm" color="#aa44ff" />
+              <HoloObject shape="torus" size="sm" color="#00e577" />
+            </div>
+          </DemoBlock>
+        </div>
+      </section>
+
+      <!-- ======================== -->
+      <!-- SECTION: HUD             -->
+      <!-- ======================== -->
+      <section>
+        <SectionTitle title="HUD Elements" subtitle="HEAD-UP DISPLAY" />
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <DemoBlock title="HUD Frame" label="HUDフレーム">
+            <HudFrame title="SYSTEM STATUS" status="NOMINAL // ALL CLEAR">
+              <div class="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p class="font-mono text-[10px] text-cyber-600">PWR</p>
+                  <p class="font-display text-lg text-status-400">98.2%</p>
+                </div>
+                <div>
+                  <p class="font-mono text-[10px] text-cyber-600">TEMP</p>
+                  <p class="font-display text-lg text-cyber-300">42.7°C</p>
+                </div>
+                <div>
+                  <p class="font-mono text-[10px] text-cyber-600">LOAD</p>
+                  <p class="font-display text-lg text-alert-400">67.3%</p>
+                </div>
+              </div>
+            </HudFrame>
+          </DemoBlock>
+
+          <DemoBlock title="HUD Reticle" label="HUDレティクル">
+            <div class="flex items-center justify-center py-4">
+              <HudReticle size="lg" />
+            </div>
+          </DemoBlock>
+
+          <DemoBlock title="HUD Compass" label="HUDコンパス" class="lg:col-span-2">
+            <HudCompass heading={127} />
+          </DemoBlock>
+        </div>
+      </section>
+
+      <!-- ======================== -->
+      <!-- SECTION: Panels          -->
+      <!-- ======================== -->
+      <section>
+        <SectionTitle title="Panels" subtitle="CONTAINERS" />
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <DemoBlock title="Glass Panel" label="グラスパネル">
+            <div class="space-y-3">
+              <GlassPanel variant="default" glow>
+                <p class="font-mono text-xs text-cyber-400">Default variant with glow</p>
+              </GlassPanel>
+              <GlassPanel variant="alert">
+                <p class="font-mono text-xs text-alert-400">Alert variant</p>
+              </GlassPanel>
+              <GlassPanel variant="bio">
+                <p class="font-mono text-xs text-bio-400">Bio variant</p>
+              </GlassPanel>
+            </div>
+          </DemoBlock>
+
+          <DemoBlock title="Holo Card" label="ホロカード">
+            <HoloCard title="ANALYSIS REPORT">
+              <p class="font-ui text-sm text-cyber-400 mb-3">
+                ホバーすると虹色のシマーが走る
+              </p>
+              <div class="flex gap-4">
+                <StatCounter value={1247} label="EVENTS" />
+                <StatCounter value={99.8} label="UPTIME" unit="%" decimals={1} />
+              </div>
+            </HoloCard>
+          </DemoBlock>
+
+          <DemoBlock title="Terminal Panel" label="ターミナルパネル">
+            <TerminalPanel title="SYS.LOG">
+              <p><span class="text-status-500">$</span> system --check all</p>
+              <p class="text-cyber-600 mt-1">[INFO] Running diagnostics...</p>
+              <p class="text-status-400 mt-1">[OK] Core systems: nominal</p>
+              <p class="text-status-400">[OK] Network: connected</p>
+              <p class="text-alert-400">[WARN] Memory: 87% used</p>
+              <p class="text-cyber-600 mt-1">[INFO] All checks complete.</p>
+            </TerminalPanel>
+          </DemoBlock>
+        </div>
+      </section>
+
+      <!-- ======================== -->
+      <!-- SECTION: Data Display    -->
+      <!-- ======================== -->
+      <section>
+        <SectionTitle title="Data Display" subtitle="METRICS & VISUALIZATION" />
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Stat Counters -->
+          <DemoBlock title="Stat Counters" label="統計カウンター">
+            <div class="grid grid-cols-3 gap-6">
+              <StatCounter value={14892} label="TOTAL NODES" />
+              <StatCounter value={99.97} label="UPTIME" unit="%" decimals={2} />
+              <StatCounter value={342} label="ACTIVE" unit=" ms" />
+            </div>
+          </DemoBlock>
+
+          <!-- Progress Arcs -->
+          <DemoBlock title="Progress Arcs" label="プログレスアーク">
+            <div class="flex items-center justify-center gap-6 flex-wrap">
+              <ProgressArc value={78} label="CPU" />
+              <ProgressArc value={45} label="MEM" variant="status" />
+              <ProgressArc value={92} label="DISK" variant="alert" />
+              <ProgressArc value={15} label="NET" variant="danger" />
+            </div>
+          </DemoBlock>
+
+          <!-- Waveform -->
+          <DemoBlock title="Waveform Display" label="波形ディスプレイ">
+            <div class="space-y-4">
+              <WaveformDisplay bars={48} />
+              <WaveformDisplay bars={32} variant="holo" />
+            </div>
+          </DemoBlock>
+
+          <!-- Data Grid -->
+          <DemoBlock title="Data Grid" label="データグリッド">
+            <DataGrid
+              columns={["NODE", "STATUS", "LATENCY", "LOAD"]}
+              rows={[
+                ["NODE-ALPHA", "ACTIVE", "12ms", "34%"],
+                ["NODE-BETA", "ACTIVE", "8ms", "67%"],
+                ["NODE-GAMMA", "STANDBY", "---", "0%"],
+                ["NODE-DELTA", "ACTIVE", "23ms", "89%"],
+                ["NODE-EPSILON", "WARNING", "145ms", "95%"],
+              ]}
+            />
+          </DemoBlock>
+        </div>
+      </section>
+
+      <!-- ======================== -->
+      <!-- SECTION: Controls        -->
+      <!-- ======================== -->
+      <section>
+        <SectionTitle title="Controls" subtitle="INTERACTIVE ELEMENTS" />
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Buttons -->
+          <DemoBlock title="Neon Buttons" label="ネオンボタン">
+            <div class="space-y-4">
+              <div class="flex flex-wrap items-center gap-3">
+                <NeonButton>Default</NeonButton>
+                <NeonButton variant="alert">Alert</NeonButton>
+                <NeonButton variant="danger">Danger</NeonButton>
+                <NeonButton variant="status">Status</NeonButton>
+                <NeonButton variant="holo">Holo</NeonButton>
+              </div>
+              <div class="flex flex-wrap items-center gap-3">
+                <NeonButton size="sm">Small</NeonButton>
+                <NeonButton size="md">Medium</NeonButton>
+                <NeonButton size="lg">Large</NeonButton>
+              </div>
+            </div>
+          </DemoBlock>
+
+          <!-- Toggles & Sliders -->
+          <DemoBlock title="Toggles & Sliders" label="トグル & スライダー">
+            <div class="space-y-5">
+              <div class="flex flex-wrap items-center gap-6">
+                <HoloToggle label="SHIELDS" checked />
+                <HoloToggle label="WEAPONS" />
+                <HoloToggle label="STEALTH" checked />
+              </div>
+              <CyberSlider label="POWER OUTPUT" value={72} unit="%" />
+              <CyberSlider label="FREQUENCY" min={88} max={108} value={97} unit=" MHz" />
+            </div>
+          </DemoBlock>
+        </div>
+      </section>
+
+      <!-- ======================== -->
+      <!-- SECTION: Navigation      -->
+      <!-- ======================== -->
+      <section>
+        <SectionTitle title="Navigation" subtitle="WAYFINDING" />
+
+        <DemoBlock title="HUD Nav" label="HUDナビ">
+          <HudNav
+            items={[
+              { label: "DASHBOARD", href: "#", active: true },
+              { label: "SYSTEMS", href: "#" },
+              { label: "SENSORS", href: "#" },
+              { label: "COMMS", href: "#" },
+              { label: "LOGS", href: "#" },
+            ]}
+          />
+        </DemoBlock>
+      </section>
+
+      <!-- ======================== -->
+      <!-- SECTION: Feedback        -->
+      <!-- ======================== -->
+      <section>
+        <SectionTitle title="Feedback" subtitle="STATUS & ALERTS" />
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <DemoBlock title="Status Indicators" label="ステータスインジケーター">
+            <div class="flex flex-wrap items-center gap-6">
+              <StatusIndicator status="online" />
+              <StatusIndicator status="warning" />
+              <StatusIndicator status="error" />
+              <StatusIndicator status="offline" />
+            </div>
+          </DemoBlock>
+
+          <DemoBlock title="Loading Spinners" label="ローディングスピナー">
+            <div class="flex items-center justify-center gap-8">
+              <LoadingSpinner size="sm" />
+              <LoadingSpinner size="md" label="LOADING" />
+              <LoadingSpinner size="lg" label="PROCESSING" />
+            </div>
+          </DemoBlock>
+
+          <DemoBlock title="Alert Banners" label="アラートバナー" class="lg:col-span-2">
+            <div class="space-y-3">
+              <AlertBanner variant="info">
+                <strong>INFO:</strong> System diagnostics complete. All modules operating within normal parameters.
+              </AlertBanner>
+              <AlertBanner variant="warning" dismissible>
+                <strong>WARNING:</strong> Memory usage exceeding 85% threshold. Consider optimizing resource allocation.
+              </AlertBanner>
+              <AlertBanner variant="danger" dismissible>
+                <strong>CRITICAL:</strong> Shield generator offline. Immediate maintenance required.
+              </AlertBanner>
+            </div>
+          </DemoBlock>
+        </div>
+      </section>
+
+      <!-- ======================== -->
+      <!-- SECTION: Typography      -->
+      <!-- ======================== -->
+      <section>
+        <SectionTitle title="Typography" subtitle="TEXT EFFECTS" />
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <DemoBlock title="Glitch Text" label="グリッチテキスト">
+            <div class="space-y-4 py-4">
+              <GlitchText text="SYSTEM BREACH" tag="h2" class="text-2xl text-cyber-200" />
+              <GlitchText text="WARNING: INTRUSION DETECTED" tag="h3" class="text-lg text-danger-400" />
+            </div>
+          </DemoBlock>
+
+          <DemoBlock title="TypeWriter" label="タイプライター">
+            <div class="space-y-4 py-4">
+              <TypeWriter
+                lines={[
+                  "Initializing neural interface...",
+                  "Connecting to mainframe...",
+                  "Access granted. Welcome, Operator.",
+                  "All systems nominal.",
+                ]}
+              />
+            </div>
+          </DemoBlock>
+
+          <DemoBlock title="Holo Heading" label="ホロ見出し" class="lg:col-span-2">
+            <div class="space-y-6 py-4">
+              <HoloHeading tag="h1" class="text-3xl text-cyber-200">
+                System Interface
+              </HoloHeading>
+              <HoloHeading tag="h2" class="text-xl text-holo-300">
+                Subsystem Module Alpha
+              </HoloHeading>
+            </div>
+          </DemoBlock>
+        </div>
+      </section>
+
+      <!-- ======================== -->
+      <!-- SECTION: Decorative      -->
+      <!-- ======================== -->
+      <section>
+        <SectionTitle title="Decorative" subtitle="BACKGROUNDS & EFFECTS" />
+
+        <DemoBlock title="Circuit Pattern" label="回路パターン">
+          <CircuitPattern class="h-40 border border-cyber-800/20 bg-void-600/30">
+            <div class="relative z-10 h-full flex items-center justify-center">
+              <p class="font-display text-sm text-cyber-500 tracking-widest uppercase">Circuit Pattern Background</p>
+            </div>
+          </CircuitPattern>
+        </DemoBlock>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-cyber-800/30 bg-void-700/50 px-6 py-4 mt-20">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <span class="font-mono text-[10px] text-cyber-800 tracking-widest">
+          GRAPHICAL.COMPONENTS // SHOWCASE
+        </span>
+        <span class="font-mono text-[10px] text-cyber-800">
+          <span class="text-status-600">&#9679;</span> SYSTEM NOMINAL
+        </span>
+      </div>
+    </footer>
+  </div>
+</BaseLayout>
+
+<style>
+  html {
+    scroll-behavior: smooth;
+  }
+</style>

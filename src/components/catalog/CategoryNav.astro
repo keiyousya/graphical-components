@@ -1,5 +1,6 @@
 ---
 import { categories, getComponentsByCategory } from "../../data/components";
+import { url } from "../../utils/paths";
 
 const currentPath = Astro.url.pathname;
 ---
@@ -11,7 +12,7 @@ const currentPath = Astro.url.pathname;
   {
     categories.map((cat) => {
       const count = getComponentsByCategory(cat.id).length;
-      const href = `/components/${cat.id}`;
+      const href = url(`/components/${cat.id}`);
       const isActive = currentPath.startsWith(href);
       return (
         <a

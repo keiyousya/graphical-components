@@ -27,6 +27,7 @@ import CircuitPattern from "../components/ui/decorative/CircuitPattern.astro";
 import HudNav from "../components/ui/navigation/HudNav.astro";
 import SectionTitle from "../components/catalog/SectionTitle.astro";
 import DemoBlock from "../components/catalog/DemoBlock.astro";
+import { url } from "../utils/paths";
 ---
 
 <BaseLayout title="Showcase | Graphical Components">
@@ -34,14 +35,14 @@ import DemoBlock from "../components/catalog/DemoBlock.astro";
     <!-- Header -->
     <header class="sticky top-0 z-50 border-b border-cyber-800/40 bg-void-600/80 backdrop-blur-md px-6 py-3">
       <div class="max-w-7xl mx-auto flex items-center justify-between">
-        <a href="/" class="flex items-center gap-3">
+        <a href={url("/")} class="flex items-center gap-3">
           <div class="size-2 rounded-full bg-status-500 shadow-glow-status animate-pulse-glow"></div>
           <span class="font-display text-xs tracking-[0.2em] text-cyber-400 uppercase">Graphical Components</span>
         </a>
         <nav class="flex items-center gap-4 font-mono text-[10px] text-cyber-600">
-          <a href="/" class="hover:text-cyber-400 transition-colors">HOME</a>
-          <a href="/showcase" class="text-cyber-400">SHOWCASE</a>
-          <a href="/components" class="hover:text-cyber-400 transition-colors">CATALOG</a>
+          <a href={url("/")} class="hover:text-cyber-400 transition-colors">HOME</a>
+          <a href={url("/showcase")} class="text-cyber-400">SHOWCASE</a>
+          <a href={url("/components")} class="hover:text-cyber-400 transition-colors">CATALOG</a>
         </nav>
       </div>
     </header>

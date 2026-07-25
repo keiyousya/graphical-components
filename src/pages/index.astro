@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { categories, getComponentsByCategory } from "../data/components";
+import { url } from "../utils/paths";
 ---
 
 <BaseLayout title="Graphical Components | Sci-Fi UI Catalog">
@@ -103,7 +104,7 @@ import { categories, getComponentsByCategory } from "../data/components";
         style="animation-delay: 0.45s; animation-fill-mode: both;"
       >
         <a
-          href="/showcase"
+          href={url("/showcase")}
           class="group relative inline-flex items-center gap-3 border border-cyber-500 bg-cyber-500/10 px-8 py-3 font-display text-sm tracking-widest text-cyber-200 uppercase transition-all hover:bg-cyber-500/20 hover:shadow-glow-md"
         >
           <span>Live Showcase</span>
@@ -123,7 +124,7 @@ import { categories, getComponentsByCategory } from "../data/components";
           <span class="absolute bottom-0 right-0 size-2 border-b-2 border-r-2 border-cyber-400"></span>
         </a>
         <a
-          href="/components"
+          href={url("/components")}
           class="group relative inline-flex items-center gap-3 border border-cyber-700 px-8 py-3 font-display text-sm tracking-widest text-cyber-400 uppercase transition-all hover:border-cyber-500 hover:bg-cyber-500/10 hover:shadow-glow-md hover:text-cyber-200"
         >
           <span>Browse Catalog</span>
@@ -167,7 +168,7 @@ import { categories, getComponentsByCategory } from "../data/components";
               const count = getComponentsByCategory(cat.id).length;
               return (
                 <a
-                  href={`/components/${cat.id}`}
+                  href={url(`/components/${cat.id}`)}
                   class="group relative border border-cyber-800/40 bg-void-500/50 p-5 transition-all hover:border-cyber-600/60 hover:bg-void-400/30 hover:shadow-glow-sm animate-fade-in-up"
                   style={`animation-delay: ${0.05 * i}s; animation-fill-mode: both;`}
                 >

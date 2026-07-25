@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "./BaseLayout.astro";
 import CategoryNav from "../components/catalog/CategoryNav.astro";
+import { url } from "../utils/paths";
 
 interface Props {
   title?: string;
@@ -18,7 +19,7 @@ const { title, description } = Astro.props;
     >
       <!-- Logo -->
       <a
-        href="/"
+        href={url("/")}
         class="flex items-center gap-3 border-b border-cyber-800/50 px-5 py-4"
       >
         <div class="size-8 rounded-sm bg-cyber-500/20 effect-neon-border grid place-items-center">
@@ -48,7 +49,7 @@ const { title, description } = Astro.props;
       <header
         class="lg:hidden sticky top-0 z-40 flex items-center gap-3 border-b border-cyber-800/50 bg-void-600/90 backdrop-blur-md px-4 py-3"
       >
-        <a href="/" class="font-display text-sm tracking-widest text-cyber-300 uppercase">
+        <a href={url("/")} class="font-display text-sm tracking-widest text-cyber-300 uppercase">
           GC
         </a>
       </header>

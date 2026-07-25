@@ -1,5 +1,2 @@
-allowBuilds:
-  esbuild: true
-  sharp: true
-
-onlyBuiltDependencies: '["esbuild"]'
+onlyBuiltDependencies:
+  - esbuild

@@ -1,0 +1,213 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg";
+  color?: string;
+  class?: string;
+}
+
+const {
+  size = "md",
+  color = "#00d4e5",
+  class: className = "",
+} = Astro.props;
+
+const sizes = {
+  sm: "size-40",
+  md: "size-64",
+  lg: "size-96",
+};
+---
+
+<div
+  class:list={["arc-reactor relative inline-flex items-center justify-center", sizes[size], className]}
+  data-color={color}
+>
+  <canvas class="arc-reactor-canvas absolute inset-0 w-full h-full"></canvas>
+  <div class="relative z-10">
+    <slot />
+  </div>
+</div>
+
+<script>
+  import * as THREE from "three";
+
+  document.querySelectorAll<HTMLElement>(".arc-reactor").forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>(".arc-reactor-canvas");
+    if (!canvas) return;
+
+    const color = container.dataset.color || "#00d4e5";
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    camera.position.z = 5;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const mainColor = new THREE.Color(color);
+    const brightColor = new THREE.Color(color).multiplyScalar(2);
+
+    // Core glow
+    const coreGeo = new THREE.CircleGeometry(0.25, 32);
+    const coreMat = new THREE.MeshBasicMaterial({
+      color: brightColor,
+      transparent: true,
+      opacity: 0.6,
+      side: THREE.DoubleSide,
+    });
+    scene.add(new THREE.Mesh(coreGeo, coreMat));
+
+    // Core outer glow
+    const coreGlowGeo = new THREE.CircleGeometry(0.45, 32);
+    const coreGlowMat = new THREE.MeshBasicMaterial({
+      color: mainColor,
+      transparent: true,
+      opacity: 0.15,
+      side: THREE.DoubleSide,
+    });
+    scene.add(new THREE.Mesh(coreGlowGeo, coreGlowMat));
+
+    // Triangular segments (Iron Man reactor style)
+    const segmentGroup = new THREE.Group();
+    for (let i = 0; i < 10; i++) {
+      const angle = (i / 10) * Math.PI * 2;
+      const nextAngle = ((i + 1) / 10) * Math.PI * 2;
+      const midAngle = (angle + nextAngle) / 2;
+      const gap = 0.04;
+
+      const shape = new THREE.Shape();
+      const innerR = 0.55;
+      const outerR = 1.1;
+      shape.moveTo(Math.cos(angle + gap) * innerR, Math.sin(angle + gap) * innerR);
+      shape.lineTo(Math.cos(angle + gap) * outerR, Math.sin(angle + gap) * outerR);
+      shape.lineTo(Math.cos(midAngle) * (outerR + 0.15), Math.sin(midAngle) * (outerR + 0.15));
+      shape.lineTo(Math.cos(nextAngle - gap) * outerR, Math.sin(nextAngle - gap) * outerR);
+      shape.lineTo(Math.cos(nextAngle - gap) * innerR, Math.sin(nextAngle - gap) * innerR);
+
+      const geo = new THREE.ShapeGeometry(shape);
+      const mat = new THREE.MeshBasicMaterial({
+        color: mainColor,
+        transparent: true,
+        opacity: 0.08,
+        side: THREE.DoubleSide,
+      });
+      segmentGroup.add(new THREE.Mesh(geo, mat));
+
+      // Segment border
+      const borderPts = [
+        new THREE.Vector3(Math.cos(angle + gap) * innerR, Math.sin(angle + gap) * innerR, 0),
+        new THREE.Vector3(Math.cos(angle + gap) * outerR, Math.sin(angle + gap) * outerR, 0),
+        new THREE.Vector3(Math.cos(midAngle) * (outerR + 0.15), Math.sin(midAngle) * (outerR + 0.15), 0),
+        new THREE.Vector3(Math.cos(nextAngle - gap) * outerR, Math.sin(nextAngle - gap) * outerR, 0),
+        new THREE.Vector3(Math.cos(nextAngle - gap) * innerR, Math.sin(nextAngle - gap) * innerR, 0),
+        new THREE.Vector3(Math.cos(angle + gap) * innerR, Math.sin(angle + gap) * innerR, 0),
+      ];
+      const borderGeo = new THREE.BufferGeometry().setFromPoints(borderPts);
+      const borderMat = new THREE.LineBasicMaterial({ color: mainColor, transparent: true, opacity: 0.4 });
+      segmentGroup.add(new THREE.Line(borderGeo, borderMat));
+    }
+    scene.add(segmentGroup);
+
+    // Rings
+    const rings: THREE.Line[] = [];
+    [0.5, 1.15, 1.5, 1.8].forEach((r, i) => {
+      const curve = new THREE.EllipseCurve(0, 0, r, r, 0, Math.PI * 2, false, 0);
+      const pts = curve.getPoints(128);
+      const geo = new THREE.BufferGeometry().setFromPoints(pts.map(p => new THREE.Vector3(p.x, p.y, 0)));
+      const mat = new THREE.LineBasicMaterial({
+        color: mainColor,
+        transparent: true,
+        opacity: [0.5, 0.6, 0.3, 0.15][i],
+      });
+      const ring = new THREE.Line(geo, mat);
+      scene.add(ring);
+      rings.push(ring);
+    });
+
+    // Outer rotating dashes
+    const dashGroup = new THREE.Group();
+    for (let i = 0; i < 36; i++) {
+      const angle = (i / 36) * Math.PI * 2;
+      const len = i % 3 === 0 ? 0.15 : 0.08;
+      const r = 1.55;
+      const geo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(Math.cos(angle) * r, Math.sin(angle) * r, 0),
+        new THREE.Vector3(Math.cos(angle) * (r + len), Math.sin(angle) * (r + len), 0),
+      ]);
+      const mat = new THREE.LineBasicMaterial({
+        color: mainColor,
+        transparent: true,
+        opacity: i % 3 === 0 ? 0.6 : 0.25,
+      });
+      dashGroup.add(new THREE.Line(geo, mat));
+    }
+    scene.add(dashGroup);
+
+    // Energy arcs (partial rings that rotate fast)
+    const arcGroup = new THREE.Group();
+    for (let i = 0; i < 3; i++) {
+      const startAngle = (i / 3) * Math.PI * 2;
+      const curve = new THREE.EllipseCurve(0, 0, 1.35, 1.35, startAngle, startAngle + Math.PI * 0.4, false, 0);
+      const pts = curve.getPoints(32);
+      const geo = new THREE.BufferGeometry().setFromPoints(pts.map(p => new THREE.Vector3(p.x, p.y, 0)));
+      const mat = new THREE.LineBasicMaterial({ color: brightColor, transparent: true, opacity: 0.5 });
+      arcGroup.add(new THREE.Line(geo, mat));
+    }
+    scene.add(arcGroup);
+
+    // Glow points on inner ring
+    for (let i = 0; i < 10; i++) {
+      const angle = (i / 10) * Math.PI * 2;
+      const r = 0.5;
+      const dotGeo = new THREE.CircleGeometry(0.03, 8);
+      const dotMat = new THREE.MeshBasicMaterial({
+        color: brightColor,
+        transparent: true,
+        opacity: 0.8,
+        side: THREE.DoubleSide,
+      });
+      const dot = new THREE.Mesh(dotGeo, dotMat);
+      dot.position.set(Math.cos(angle) * r, Math.sin(angle) * r, 0.01);
+      scene.add(dot);
+    }
+
+    // Mouse
+    let mouseX = 0, mouseY = 0;
+    container.addEventListener("mousemove", (e) => {
+      const rect = container.getBoundingClientRect();
+      mouseX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+      mouseY = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+    });
+    container.addEventListener("mouseleave", () => { mouseX = 0; mouseY = 0; });
+
+    function resize() {
+      const rect = container.getBoundingClientRect();
+      const s = Math.min(rect.width, rect.height);
+      renderer.setSize(s, s);
+    }
+
+    let time = 0;
+    function animate() {
+      time += 0.01;
+
+      segmentGroup.rotation.z += 0.002;
+      dashGroup.rotation.z -= 0.004;
+      arcGroup.rotation.z += 0.015;
+
+      // Pulse core
+      coreMat.opacity = 0.5 + Math.sin(time * 3) * 0.2;
+      coreGlowMat.opacity = 0.1 + Math.sin(time * 3) * 0.08;
+
+      // Subtle tilt
+      scene.rotation.x = mouseY * 0.3;
+      scene.rotation.y = mouseX * 0.3;
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    animate();
+    const ro = new ResizeObserver(() => resize());
+    ro.observe(container);
+  });
+</script>

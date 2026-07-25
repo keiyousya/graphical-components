@@ -28,6 +28,11 @@ import HoloGlobe from "../ui/data/HoloGlobe.astro";
 import HoloObject from "../ui/data/HoloObject.astro";
 import WaveformDisplay from "../ui/data/WaveformDisplay.astro";
 import DataGrid from "../ui/data/DataGrid.astro";
+import HoloRing from "../ui/data/HoloRing.astro";
+import ArcReactor from "../ui/data/ArcReactor.astro";
+import HoloTerrain from "../ui/data/HoloTerrain.astro";
+import WarpTunnel from "../ui/data/WarpTunnel.astro";
+import HudOrbit from "../ui/data/HudOrbit.astro";
 import ParticleField from "../ui/decorative/ParticleField.astro";
 import ScanLine from "../ui/decorative/ScanLine.astro";
 import GridOverlay from "../ui/decorative/GridOverlay.astro";
@@ -183,6 +188,32 @@ const slug = component.slug;
         ["NODE-EPSILON", "WARNING", "145ms", "95%"],
       ]}
     />
+  )}
+
+  {slug === "holo-ring" && (
+    <div class="flex items-center justify-center h-80">
+      <HoloRing size="lg" />
+    </div>
+  )}
+
+  {slug === "arc-reactor" && (
+    <div class="flex items-center justify-center h-80">
+      <ArcReactor size="lg" />
+    </div>
+  )}
+
+  {slug === "holo-terrain" && (
+    <HoloTerrain size="lg" />
+  )}
+
+  {slug === "warp-tunnel" && (
+    <WarpTunnel size="lg" />
+  )}
+
+  {slug === "hud-orbit" && (
+    <div class="flex items-center justify-center h-80">
+      <HudOrbit size="lg" />
+    </div>
   )}
 
   {/* === Controls === */}

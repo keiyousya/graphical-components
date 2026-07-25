@@ -1,0 +1,178 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg";
+  color?: string;
+  class?: string;
+}
+
+const {
+  size = "md",
+  color = "#00d4e5",
+  class: className = "",
+} = Astro.props;
+
+const sizes = {
+  sm: "h-40",
+  md: "h-64",
+  lg: "h-96",
+};
+---
+
+<div
+  class:list={["holo-terrain relative w-full", sizes[size], className]}
+  data-color={color}
+>
+  <canvas class="holo-terrain-canvas absolute inset-0 w-full h-full"></canvas>
+</div>
+
+<script>
+  import * as THREE from "three";
+
+  document.querySelectorAll<HTMLElement>(".holo-terrain").forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>(".holo-terrain-canvas");
+    if (!canvas) return;
+
+    const color = container.dataset.color || "#00d4e5";
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(55, 2, 0.1, 100);
+    camera.position.set(0, 3, 5);
+    camera.lookAt(0, 0, -2);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const mainColor = new THREE.Color(color);
+
+    // Terrain grid
+    const gridW = 60;
+    const gridH = 40;
+    const geo = new THREE.PlaneGeometry(16, 12, gridW, gridH);
+    geo.rotateX(-Math.PI / 2);
+    const positions = geo.attributes.position.array as Float32Array;
+
+    // Generate terrain height
+    function updateTerrain(time: number) {
+      for (let i = 0; i <= gridH; i++) {
+        for (let j = 0; j <= gridW; j++) {
+          const idx = (i * (gridW + 1) + j) * 3;
+          const x = positions[idx];
+          const z = positions[idx + 2];
+          positions[idx + 1] =
+            Math.sin(x * 0.5 + time * 0.5) * 0.4 +
+            Math.sin(z * 0.3 + time * 0.3) * 0.6 +
+            Math.cos((x + z) * 0.4 + time * 0.2) * 0.3 +
+            Math.sin(x * 1.2 + time) * 0.15;
+        }
+      }
+      geo.attributes.position.needsUpdate = true;
+    }
+
+    // Wireframe mesh
+    const mat = new THREE.MeshBasicMaterial({
+      color: mainColor,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.25,
+    });
+    const terrain = new THREE.Mesh(geo, mat);
+    terrain.position.z = -3;
+    scene.add(terrain);
+
+    // Brighter edge lines
+    const edges = new THREE.EdgesGeometry(geo, 15);
+    const edgeMat = new THREE.LineBasicMaterial({
+      color: mainColor,
+      transparent: true,
+      opacity: 0.08,
+    });
+    const edgeLines = new THREE.LineSegments(edges, edgeMat);
+    edgeLines.position.copy(terrain.position);
+    scene.add(edgeLines);
+
+    // Scan line on terrain
+    const scanGeo = new THREE.PlaneGeometry(16, 0.05);
+    const scanMat = new THREE.MeshBasicMaterial({
+      color: mainColor,
+      transparent: true,
+      opacity: 0.5,
+      side: THREE.DoubleSide,
+    });
+    const scanLine = new THREE.Mesh(scanGeo, scanMat);
+    scanLine.rotation.x = -Math.PI / 2;
+    scanLine.position.z = -3;
+    scanLine.position.y = 0.5;
+    scene.add(scanLine);
+
+    // Glow plane underneath
+    const glowPlaneGeo = new THREE.PlaneGeometry(16, 12);
+    const glowPlaneMat = new THREE.MeshBasicMaterial({
+      color: mainColor,
+      transparent: true,
+      opacity: 0.03,
+      side: THREE.DoubleSide,
+    });
+    const glowPlane = new THREE.Mesh(glowPlaneGeo, glowPlaneMat);
+    glowPlane.rotation.x = -Math.PI / 2;
+    glowPlane.position.y = -0.5;
+    glowPlane.position.z = -3;
+    scene.add(glowPlane);
+
+    // Floating data points
+    const pointCount = 50;
+    const pointPositions = new Float32Array(pointCount * 3);
+    for (let i = 0; i < pointCount; i++) {
+      pointPositions[i * 3] = (Math.random() - 0.5) * 14;
+      pointPositions[i * 3 + 1] = Math.random() * 2;
+      pointPositions[i * 3 + 2] = -3 + (Math.random() - 0.5) * 10;
+    }
+    const pointGeo = new THREE.BufferGeometry();
+    pointGeo.setAttribute("position", new THREE.BufferAttribute(pointPositions, 3));
+    const pointMat = new THREE.PointsMaterial({
+      color: mainColor,
+      size: 0.05,
+      transparent: true,
+      opacity: 0.5,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true,
+    });
+    scene.add(new THREE.Points(pointGeo, pointMat));
+
+    // Fog
+    scene.fog = new THREE.FogExp2(0x000000, 0.06);
+
+    let mouseX = 0;
+    container.addEventListener("mousemove", (e) => {
+      const rect = container.getBoundingClientRect();
+      mouseX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+    });
+
+    function resize() {
+      const rect = container.getBoundingClientRect();
+      renderer.setSize(rect.width, rect.height);
+      camera.aspect = rect.width / rect.height;
+      camera.updateProjectionMatrix();
+    }
+
+    let time = 0;
+    function animate() {
+      time += 0.01;
+
+      updateTerrain(time);
+
+      // Scan line sweep
+      scanLine.position.z = -3 + Math.sin(time * 0.5) * 5;
+
+      // Camera sway
+      camera.position.x += (mouseX * 2 - camera.position.x) * 0.02;
+      camera.lookAt(0, 0, -2);
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    animate();
+    const ro = new ResizeObserver(() => resize());
+    ro.observe(container);
+  });
+</script>

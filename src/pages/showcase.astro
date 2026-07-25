@@ -22,6 +22,11 @@ import HoloGlobe from "../components/ui/data/HoloGlobe.astro";
 import HoloObject from "../components/ui/data/HoloObject.astro";
 import WaveformDisplay from "../components/ui/data/WaveformDisplay.astro";
 import DataGrid from "../components/ui/data/DataGrid.astro";
+import HoloRing from "../components/ui/data/HoloRing.astro";
+import ArcReactor from "../components/ui/data/ArcReactor.astro";
+import HoloTerrain from "../components/ui/data/HoloTerrain.astro";
+import WarpTunnel from "../components/ui/data/WarpTunnel.astro";
+import HudOrbit from "../components/ui/data/HudOrbit.astro";
 import ParticleField from "../components/ui/decorative/ParticleField.astro";
 import CircuitPattern from "../components/ui/decorative/CircuitPattern.astro";
 import HudNav from "../components/ui/navigation/HudNav.astro";
@@ -92,6 +97,36 @@ import { url } from "../utils/paths";
               <HoloObject shape="octahedron" size="sm" color="#aa44ff" />
               <HoloObject shape="torus" size="sm" color="#00e577" />
             </div>
+          </DemoBlock>
+          <!-- Holo Ring -->
+          <DemoBlock title="Holo Ring" label="ホロリング">
+            <div class="flex items-center justify-center h-72 border border-cyber-800/20 bg-void-600/30">
+              <HoloRing size="lg" />
+            </div>
+          </DemoBlock>
+
+          <!-- Arc Reactor -->
+          <DemoBlock title="Arc Reactor" label="アークリアクター">
+            <div class="flex items-center justify-center h-72 border border-cyber-800/20 bg-void-600/30">
+              <ArcReactor size="lg" />
+            </div>
+          </DemoBlock>
+
+          <!-- HUD Orbit -->
+          <DemoBlock title="HUD Orbit" label="HUDオービット">
+            <div class="flex items-center justify-center h-72 border border-cyber-800/20 bg-void-600/30">
+              <HudOrbit size="lg" />
+            </div>
+          </DemoBlock>
+
+          <!-- Holo Terrain -->
+          <DemoBlock title="Holo Terrain" label="ホロテレイン" class="lg:col-span-2">
+            <HoloTerrain size="lg" class="border border-cyber-800/20" />
+          </DemoBlock>
+
+          <!-- Warp Tunnel -->
+          <DemoBlock title="Warp Tunnel" label="ワープトンネル" class="lg:col-span-2">
+            <WarpTunnel size="lg" class="border border-cyber-800/20" />
           </DemoBlock>
         </div>
       </section>

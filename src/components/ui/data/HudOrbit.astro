@@ -1,0 +1,213 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg";
+  color?: string;
+  class?: string;
+}
+
+const {
+  size = "md",
+  color = "#00d4e5",
+  class: className = "",
+} = Astro.props;
+
+const sizes = {
+  sm: "size-48",
+  md: "size-72",
+  lg: "size-96",
+};
+---
+
+<div
+  class:list={["hud-orbit relative inline-flex items-center justify-center", sizes[size], className]}
+  data-color={color}
+>
+  <canvas class="hud-orbit-canvas absolute inset-0 w-full h-full"></canvas>
+  <div class="relative z-10">
+    <slot />
+  </div>
+</div>
+
+<script>
+  import * as THREE from "three";
+
+  document.querySelectorAll<HTMLElement>(".hud-orbit").forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>(".hud-orbit-canvas");
+    if (!canvas) return;
+
+    const color = container.dataset.color || "#00d4e5";
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    camera.position.set(0, 2, 5);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const mainColor = new THREE.Color(color);
+    const accentColor = new THREE.Color(color).multiplyScalar(1.5);
+    const dimColor = new THREE.Color(color).multiplyScalar(0.4);
+
+    // Central sphere
+    const coreGeo = new THREE.SphereGeometry(0.3, 16, 12);
+    const coreMat = new THREE.MeshBasicMaterial({
+      color: mainColor,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.3,
+    });
+    scene.add(new THREE.Mesh(coreGeo, coreMat));
+
+    // Core glow
+    const glowGeo = new THREE.SphereGeometry(0.25, 16, 12);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: accentColor,
+      transparent: true,
+      opacity: 0.2,
+    });
+    const coreMesh = new THREE.Mesh(glowGeo, glowMat);
+    scene.add(coreMesh);
+
+    // Orbital rings at different tilts
+    interface OrbitDef {
+      radius: number;
+      tiltX: number;
+      tiltZ: number;
+      speed: number;
+      opacity: number;
+      dashed: boolean;
+      satellites: number;
+    }
+
+    const orbits: OrbitDef[] = [
+      { radius: 1.0, tiltX: 0.3, tiltZ: 0.1, speed: 0.008, opacity: 0.5, dashed: false, satellites: 1 },
+      { radius: 1.5, tiltX: -0.5, tiltZ: 0.3, speed: -0.005, opacity: 0.35, dashed: true, satellites: 2 },
+      { radius: 2.0, tiltX: 0.8, tiltZ: -0.2, speed: 0.003, opacity: 0.25, dashed: false, satellites: 1 },
+      { radius: 2.4, tiltX: -0.2, tiltZ: 0.6, speed: -0.007, opacity: 0.15, dashed: true, satellites: 3 },
+    ];
+
+    const orbitGroups: THREE.Group[] = [];
+    const satelliteData: { mesh: THREE.Mesh; radius: number; speed: number; offset: number; group: THREE.Group }[] = [];
+
+    orbits.forEach((orbit) => {
+      const group = new THREE.Group();
+      group.rotation.x = orbit.tiltX;
+      group.rotation.z = orbit.tiltZ;
+
+      // Ring
+      const curve = new THREE.EllipseCurve(0, 0, orbit.radius, orbit.radius, 0, Math.PI * 2, false, 0);
+      const pts = curve.getPoints(128);
+      const ringGeo = new THREE.BufferGeometry().setFromPoints(pts.map(p => new THREE.Vector3(p.x, 0, p.y)));
+
+      if (orbit.dashed) {
+        // Simulate dashes
+        for (let i = 0; i < 24; i++) {
+          const start = (i / 24) * Math.PI * 2;
+          const end = start + Math.PI / 30;
+          const seg = new THREE.EllipseCurve(0, 0, orbit.radius, orbit.radius, start, end, false, 0);
+          const segPts = seg.getPoints(8);
+          const segGeo = new THREE.BufferGeometry().setFromPoints(segPts.map(p => new THREE.Vector3(p.x, 0, p.y)));
+          const segMat = new THREE.LineBasicMaterial({ color: mainColor, transparent: true, opacity: orbit.opacity });
+          group.add(new THREE.Line(segGeo, segMat));
+        }
+      } else {
+        const ringMat = new THREE.LineBasicMaterial({ color: mainColor, transparent: true, opacity: orbit.opacity });
+        group.add(new THREE.Line(ringGeo, ringMat));
+      }
+
+      // Satellites
+      for (let s = 0; s < orbit.satellites; s++) {
+        const satGeo = new THREE.SphereGeometry(0.06, 8, 6);
+        const satMat = new THREE.MeshBasicMaterial({
+          color: accentColor,
+          transparent: true,
+          opacity: 0.8,
+        });
+        const sat = new THREE.Mesh(satGeo, satMat);
+        group.add(sat);
+
+        // Glow around satellite
+        const satGlowGeo = new THREE.SphereGeometry(0.12, 8, 6);
+        const satGlowMat = new THREE.MeshBasicMaterial({
+          color: mainColor,
+          transparent: true,
+          opacity: 0.15,
+        });
+        const satGlow = new THREE.Mesh(satGlowGeo, satGlowMat);
+        sat.add(satGlow);
+
+        satelliteData.push({
+          mesh: sat,
+          radius: orbit.radius,
+          speed: orbit.speed * (1 + s * 0.3),
+          offset: (s / orbit.satellites) * Math.PI * 2,
+          group,
+        });
+      }
+
+      scene.add(group);
+      orbitGroups.push(group);
+    });
+
+    // Axis lines
+    const axisLen = 0.8;
+    [
+      [new THREE.Vector3(0, -axisLen, 0), new THREE.Vector3(0, axisLen, 0)],
+    ].forEach(([a, b]) => {
+      const geo = new THREE.BufferGeometry().setFromPoints([a, b]);
+      const mat = new THREE.LineBasicMaterial({ color: dimColor, transparent: true, opacity: 0.3 });
+      scene.add(new THREE.Line(geo, mat));
+    });
+
+    // Mouse
+    let mouseX = 0, mouseY = 0;
+    container.addEventListener("mousemove", (e) => {
+      const rect = container.getBoundingClientRect();
+      mouseX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+      mouseY = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+    });
+    container.addEventListener("mouseleave", () => { mouseX = 0; mouseY = 0; });
+
+    function resize() {
+      const rect = container.getBoundingClientRect();
+      const s = Math.min(rect.width, rect.height);
+      renderer.setSize(s, s);
+    }
+
+    let time = 0;
+    function animate() {
+      time += 0.01;
+
+      // Rotate orbit groups slowly
+      orbitGroups.forEach((g, i) => {
+        g.rotation.y += orbits[i].speed;
+      });
+
+      // Position satellites
+      satelliteData.forEach((sd) => {
+        const angle = time * sd.speed * 100 + sd.offset;
+        sd.mesh.position.set(
+          Math.cos(angle) * sd.radius,
+          0,
+          Math.sin(angle) * sd.radius,
+        );
+      });
+
+      // Core pulse
+      glowMat.opacity = 0.15 + Math.sin(time * 3) * 0.1;
+
+      // Camera follow mouse
+      camera.position.x += (mouseX * 1.5 - camera.position.x) * 0.03;
+      camera.position.y += (2 - mouseY * 0.8 - camera.position.y) * 0.03;
+      camera.lookAt(0, 0, 0);
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    animate();
+    const ro = new ResizeObserver(() => resize());
+    ro.observe(container);
+  });
+</script>

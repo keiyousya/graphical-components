@@ -1,0 +1,253 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg";
+  color?: string;
+  class?: string;
+}
+
+const {
+  size = "md",
+  color = "#00d4e5",
+  class: className = "",
+} = Astro.props;
+
+const sizes = {
+  sm: "size-48",
+  md: "size-72",
+  lg: "size-96",
+};
+---
+
+<div
+  class:list={["holo-ring relative inline-flex items-center justify-center", sizes[size], className]}
+  data-color={color}
+>
+  <canvas class="holo-ring-canvas absolute inset-0 w-full h-full"></canvas>
+  <div class="relative z-10">
+    <slot />
+  </div>
+</div>
+
+<script>
+  import * as THREE from "three";
+
+  document.querySelectorAll<HTMLElement>(".holo-ring").forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>(".holo-ring-canvas");
+    if (!canvas) return;
+
+    const color = container.dataset.color || "#00d4e5";
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+    camera.position.set(0, 1.8, 3.5);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const mainColor = new THREE.Color(color);
+    const dimColor = new THREE.Color(color).multiplyScalar(0.3);
+    const brightColor = new THREE.Color(color).multiplyScalar(1.5);
+
+    // Helper: create a ring from arc segments
+    function createArc(radius: number, tubeRadius: number, startAngle: number, arcLength: number, segments: number) {
+      const curve = new THREE.EllipseCurve(0, 0, radius, radius, startAngle, startAngle + arcLength, false, 0);
+      const pts = curve.getPoints(segments);
+      const geo = new THREE.BufferGeometry().setFromPoints(pts.map(p => new THREE.Vector3(p.x, 0, p.y)));
+      return geo;
+    }
+
+    // === Outer ring (main large arc with gap) ===
+    const outerGroup = new THREE.Group();
+
+    // Main arc (270 degrees)
+    const outerArc1 = new THREE.Line(
+      createArc(2.0, 0, 0, Math.PI * 1.5, 128),
+      new THREE.LineBasicMaterial({ color: mainColor, transparent: true, opacity: 0.7, linewidth: 2 })
+    );
+    outerGroup.add(outerArc1);
+
+    // Outer thick arc (partial)
+    const outerArc2 = new THREE.Line(
+      createArc(2.05, 0, Math.PI * 0.1, Math.PI * 1.2, 96),
+      new THREE.LineBasicMaterial({ color: mainColor, transparent: true, opacity: 0.4 })
+    );
+    outerGroup.add(outerArc2);
+
+    // Outer tick marks
+    for (let i = 0; i < 60; i++) {
+      const angle = (i / 60) * Math.PI * 2;
+      const innerR = i % 5 === 0 ? 1.85 : 1.9;
+      const outerR = 1.95;
+      const geo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(Math.cos(angle) * innerR, 0, Math.sin(angle) * innerR),
+        new THREE.Vector3(Math.cos(angle) * outerR, 0, Math.sin(angle) * outerR),
+      ]);
+      const mat = new THREE.LineBasicMaterial({
+        color: i % 5 === 0 ? mainColor : dimColor,
+        transparent: true,
+        opacity: i % 5 === 0 ? 0.7 : 0.3,
+      });
+      outerGroup.add(new THREE.Line(geo, mat));
+    }
+
+    scene.add(outerGroup);
+
+    // === Middle ring (dashed, counter-rotate) ===
+    const midGroup = new THREE.Group();
+    const midArc = new THREE.Line(
+      createArc(1.5, 0, 0, Math.PI * 2, 128),
+      new THREE.LineBasicMaterial({ color: mainColor, transparent: true, opacity: 0.25 })
+    );
+    midGroup.add(midArc);
+
+    // Dotted ring
+    for (let i = 0; i < 48; i++) {
+      const angle = (i / 48) * Math.PI * 2;
+      const dotGeo = new THREE.CircleGeometry(0.02, 6);
+      const dotMat = new THREE.MeshBasicMaterial({
+        color: mainColor,
+        transparent: true,
+        opacity: 0.6,
+        side: THREE.DoubleSide,
+      });
+      const dot = new THREE.Mesh(dotGeo, dotMat);
+      dot.position.set(Math.cos(angle) * 1.5, 0, Math.sin(angle) * 1.5);
+      dot.rotation.x = -Math.PI / 2;
+      midGroup.add(dot);
+    }
+
+    scene.add(midGroup);
+
+    // === Inner ring (fast rotation) ===
+    const innerGroup = new THREE.Group();
+
+    const innerArc1 = new THREE.Line(
+      createArc(1.0, 0, 0, Math.PI * 1.8, 96),
+      new THREE.LineBasicMaterial({ color: mainColor, transparent: true, opacity: 0.6 })
+    );
+    innerGroup.add(innerArc1);
+
+    const innerArc2 = new THREE.Line(
+      createArc(0.95, 0, Math.PI * 0.3, Math.PI * 1.0, 64),
+      new THREE.LineBasicMaterial({ color: brightColor, transparent: true, opacity: 0.5 })
+    );
+    innerGroup.add(innerArc2);
+
+    scene.add(innerGroup);
+
+    // === Core ring (small, bright) ===
+    const coreGroup = new THREE.Group();
+
+    const coreRing = new THREE.Line(
+      createArc(0.5, 0, 0, Math.PI * 2, 64),
+      new THREE.LineBasicMaterial({ color: mainColor, transparent: true, opacity: 0.5 })
+    );
+    coreGroup.add(coreRing);
+
+    const coreArc = new THREE.Line(
+      createArc(0.45, 0, 0, Math.PI * 1.2, 48),
+      new THREE.LineBasicMaterial({ color: brightColor, transparent: true, opacity: 0.8 })
+    );
+    coreGroup.add(coreArc);
+
+    // Core center glow
+    const glowGeo = new THREE.CircleGeometry(0.15, 32);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: brightColor,
+      transparent: true,
+      opacity: 0.3,
+      side: THREE.DoubleSide,
+    });
+    const glow = new THREE.Mesh(glowGeo, glowMat);
+    glow.rotation.x = -Math.PI / 2;
+    coreGroup.add(glow);
+
+    // Core center point
+    const centerGeo = new THREE.CircleGeometry(0.04, 16);
+    const centerMat = new THREE.MeshBasicMaterial({
+      color: brightColor,
+      transparent: true,
+      opacity: 1,
+      side: THREE.DoubleSide,
+    });
+    const center = new THREE.Mesh(centerGeo, centerMat);
+    center.rotation.x = -Math.PI / 2;
+    center.position.y = 0.001;
+    coreGroup.add(center);
+
+    scene.add(coreGroup);
+
+    // === Accent arcs (tilted rings for depth) ===
+    for (let i = 0; i < 3; i++) {
+      const tiltArc = new THREE.Line(
+        createArc(1.2 + i * 0.3, 0, Math.random() * Math.PI, Math.PI * (0.3 + Math.random() * 0.5), 48),
+        new THREE.LineBasicMaterial({ color: mainColor, transparent: true, opacity: 0.15 + Math.random() * 0.15 })
+      );
+      tiltArc.rotation.x = (Math.random() - 0.5) * 0.6;
+      tiltArc.rotation.z = (Math.random() - 0.5) * 0.3;
+      scene.add(tiltArc);
+    }
+
+    // === Floating data points ===
+    const pointPositions = new Float32Array(30 * 3);
+    for (let i = 0; i < 30; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = 0.5 + Math.random() * 1.8;
+      pointPositions[i * 3] = Math.cos(angle) * r;
+      pointPositions[i * 3 + 1] = (Math.random() - 0.5) * 0.3;
+      pointPositions[i * 3 + 2] = Math.sin(angle) * r;
+    }
+    const pointGeo = new THREE.BufferGeometry();
+    pointGeo.setAttribute("position", new THREE.BufferAttribute(pointPositions, 3));
+    const pointMat = new THREE.PointsMaterial({
+      color: brightColor,
+      size: 0.03,
+      transparent: true,
+      opacity: 0.6,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true,
+    });
+    scene.add(new THREE.Points(pointGeo, pointMat));
+
+    // Mouse
+    let mouseX = 0, mouseY = 0;
+    container.addEventListener("mousemove", (e) => {
+      const rect = container.getBoundingClientRect();
+      mouseX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+      mouseY = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+    });
+    container.addEventListener("mouseleave", () => { mouseX = 0; mouseY = 0; });
+
+    function resize() {
+      const rect = container.getBoundingClientRect();
+      const s = Math.min(rect.width, rect.height);
+      renderer.setSize(s, s);
+    }
+
+    let time = 0;
+    function animate() {
+      time += 0.01;
+
+      outerGroup.rotation.y += 0.003;
+      midGroup.rotation.y -= 0.005;
+      innerGroup.rotation.y += 0.008;
+      coreGroup.rotation.y -= 0.012;
+
+      // Breathe effect on glow
+      glowMat.opacity = 0.2 + Math.sin(time * 2) * 0.15;
+
+      // Camera tilt from mouse
+      camera.position.x += (mouseX * 1.5 - camera.position.x) * 0.03;
+      camera.position.y += (1.8 - mouseY * 0.5 - camera.position.y) * 0.03;
+      camera.lookAt(0, 0, 0);
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    animate();
+    const ro = new ResizeObserver(() => resize());
+    ro.observe(container);
+  });
+</script>

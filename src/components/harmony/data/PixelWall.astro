@@ -1,0 +1,238 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg";
+  class?: string;
+}
+
+const {
+  size = "md",
+  class: className = "",
+} = Astro.props;
+
+const sizes = {
+  sm: "h-48",
+  md: "h-64",
+  lg: "h-80",
+};
+---
+
+<div class:list={["pixel-wall relative bg-mist-100 overflow-hidden", sizes[size], className]}>
+  <canvas class="pixel-wall-canvas w-full h-full"></canvas>
+  <div class="absolute bottom-3 right-3 font-mono text-[9px] text-hml-400/50 tracking-wider">
+    &lt;space/&gt;
+  </div>
+</div>
+
+<script>
+  import * as THREE from "three";
+
+  document.querySelectorAll<HTMLDivElement>(".pixel-wall").forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>(".pixel-wall-canvas");
+    if (!canvas) return;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf4f0f1);
+    scene.fog = new THREE.Fog(0xf4f0f1, 8, 25);
+
+    const camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+    camera.position.set(0, 1, 6);
+    camera.lookAt(0, 1, 0);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+    // -------------------------------------------------------
+    // Pixel wall: grid of small cubes on a curved wall
+    // Some cubes flicker dark/disappear, some push outward
+    // -------------------------------------------------------
+
+    const COLS = 50;
+    const ROWS = 30;
+    const CUBE_SIZE = 0.18;
+    const GAP = 0.005;
+    const CELL = CUBE_SIZE + GAP;
+    const TOTAL = COLS * ROWS;
+
+    // Curved wall: cubes arranged on a cylindrical arc
+    const WALL_RADIUS = 12;
+    const ARC_ANGLE = Math.PI * 0.35; // total arc span
+
+    const cubeGeo = new THREE.BoxGeometry(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE * 0.15);
+    const cubeMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.25,
+      metalness: 0.0,
+    });
+
+    const mesh = new THREE.InstancedMesh(cubeGeo, cubeMat, TOTAL);
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+    // Color buffer for per-instance colors
+    const colorArray = new Float32Array(TOTAL * 3);
+    const colorAttr = new THREE.InstancedBufferAttribute(colorArray, 3);
+    mesh.instanceColor = colorAttr;
+
+    const dummy = new THREE.Object3D();
+    const baseColor = new THREE.Color(0xe8e4e5);
+    const darkColor = new THREE.Color(0x3a2832);
+    const midColor = new THREE.Color(0x9a8890);
+
+    // State per cube
+    interface CubeState {
+      col: number;
+      row: number;
+      phase: number;       // animation phase offset
+      flickerSpeed: number;
+      isDark: boolean;
+      pushOut: number;      // how much pushed outward
+    }
+
+    const states: CubeState[] = [];
+
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        states.push({
+          col,
+          row,
+          phase: Math.random() * Math.PI * 2,
+          flickerSpeed: 0.3 + Math.random() * 0.8,
+          isDark: Math.random() < 0.03,
+          pushOut: 0,
+        });
+      }
+    }
+
+    function updateInstances(time: number) {
+      for (let i = 0; i < TOTAL; i++) {
+        const s = states[i];
+        const col = s.col;
+        const row = s.row;
+
+        // Position on curved wall
+        const u = (col / (COLS - 1)) - 0.5; // -0.5 to 0.5
+        const angle = u * ARC_ANGLE;
+        const baseX = Math.sin(angle) * WALL_RADIUS;
+        const baseZ = -Math.cos(angle) * WALL_RADIUS + WALL_RADIUS;
+        const baseY = (row - ROWS / 2) * CELL;
+
+        // Flickering: some cubes go dark randomly
+        const flickerWave = Math.sin(time * s.flickerSpeed + s.phase);
+        const flickerWave2 = Math.sin(time * 0.3 + col * 0.2 + row * 0.15);
+
+        // Determine if this cube should be dark this frame (very sparse)
+        const darkThreshold = 0.97 + Math.sin(time * 0.1 + row * 0.05) * 0.02;
+        const shouldBeDark = s.isDark || (flickerWave > darkThreshold);
+
+        // Some cubes push outward (glitch effect)
+        const pushWave = Math.sin(time * 0.5 + s.phase * 2 + col * 0.1);
+        const pushAmount = pushWave > 0.92 ? (pushWave - 0.92) * 3.0 : 0;
+
+        // Horizontal band glitch: entire rows shift occasionally
+        const bandGlitch = Math.sin(time * 0.7 + row * 0.3);
+        const bandShift = bandGlitch > 0.95 ? (bandGlitch - 0.95) * 8 * CELL : 0;
+
+        // Normal direction (outward from wall)
+        const nx = Math.sin(angle);
+        const nz = -Math.cos(angle) + 1;
+        const normLen = Math.sqrt(nx * nx + nz * nz) || 1;
+
+        const x = baseX + (nx / normLen) * pushAmount * 0.3 + bandShift * 0.1;
+        const y = baseY;
+        const z = baseZ + (nz / normLen) * pushAmount * 0.3;
+
+        dummy.position.set(x, y, z);
+
+        // Face the camera (rotate to align with wall curvature)
+        dummy.rotation.y = -angle;
+
+        // Scale: dark cubes might be slightly smaller or missing
+        const scale = shouldBeDark && flickerWave2 > 0.7 ? 0.3 : 1.0;
+        dummy.scale.setScalar(scale);
+
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+
+        // Color: white panels, very few dark ones
+        let color: THREE.Color;
+        if (shouldBeDark) {
+          const darkMix = 0.3 + flickerWave2 * 0.2;
+          color = new THREE.Color(darkMix, darkMix * 0.9, darkMix * 0.92);
+        } else {
+          color = new THREE.Color(1.0, 1.0, 1.0);
+        }
+
+        colorArray[i * 3] = color.r;
+        colorArray[i * 3 + 1] = color.g;
+        colorArray[i * 3 + 2] = color.b;
+
+        // Randomly toggle dark state
+        if (Math.random() < 0.002) {
+          s.isDark = !s.isDark;
+        }
+      }
+
+      mesh.instanceMatrix.needsUpdate = true;
+      colorAttr.needsUpdate = true;
+    }
+
+    scene.add(mesh);
+
+    // Floor
+    const floorGeo = new THREE.PlaneGeometry(20, 20);
+    const floorMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.2,
+      metalness: 0.0,
+    });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -ROWS / 2 * CELL - 0.5;
+    scene.add(floor);
+
+    // Lighting — very bright, even illumination for white panels
+    scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(0, 3, 8);
+    scene.add(dirLight);
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    fillLight.position.set(-3, 2, 5);
+    scene.add(fillLight);
+    const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    backLight.position.set(3, -1, 3);
+    scene.add(backLight);
+
+    let time = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      time += 0.016;
+
+      updateInstances(time);
+
+      // Gentle camera sway
+      camera.position.x = Math.sin(time * 0.08) * 1.5;
+      camera.position.y = 1 + Math.sin(time * 0.05) * 0.3;
+      camera.lookAt(0, 0.5, 0);
+
+      renderer.render(scene, camera);
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        observer.disconnect();
+        animate();
+      }
+    });
+    observer.observe(container);
+
+    const ro = new ResizeObserver(() => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+    ro.observe(container);
+  });
+</script>

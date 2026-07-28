@@ -13,9 +13,9 @@ import LifeSyncMonitor from "../../components/harmony/data/WatchMeMonitor.astro"
 import LifeGrid from "../../components/harmony/data/LifeGrid.astro";
 import VitalArc from "../../components/harmony/data/VitalArc.astro";
 import ConsciousnessOrb from "../../components/harmony/data/ConsciousnessOrb.astro";
-import BioArchViz from "../../components/harmony/data/BioArchViz.astro";
-import VoronoiField from "../../components/harmony/data/VoronoiField.astro";
 import ErythrocyteViz from "../../components/harmony/data/ErythrocyteViz.astro";
+import VoronoiField from "../../components/harmony/data/VoronoiField.astro";
+import CodeStream from "../../components/harmony/data/CodeStream.astro";
 import StatValue from "../../components/harmony/data/StatValue.astro";
 import WillIndicator from "../../components/harmony/feedback/WillIndicator.astro";
 import HarmonyAlert from "../../components/harmony/feedback/HarmonyAlert.astro";
@@ -61,11 +61,6 @@ import { url } from "../../utils/paths";
             <ConsciousnessOrb size="lg" class="border border-mist-400/30" />
           </DemoBlock>
 
-          <!-- Bio Architecture -->
-          <DemoBlock title="Bio Architecture" label="バイオ建築">
-            <BioArchViz size="lg" class="border border-mist-400/30" />
-          </DemoBlock>
-
           <!-- Erythrocyte -->
           <DemoBlock title="Erythrocyte" label="赤血球">
             <ErythrocyteViz size="lg" class="border border-mist-400/30" />
@@ -76,8 +71,13 @@ import { url } from "../../utils/paths";
             <VoronoiField size="lg" class="border border-mist-400/30" />
           </DemoBlock>
 
+          <!-- Code Stream -->
+          <DemoBlock title="Code Stream" label="コードストリーム" class="lg:col-span-2">
+            <CodeStream size="lg" class="border border-mist-400/30" />
+          </DemoBlock>
+
           <!-- LifeSync Monitor -->
-          <DemoBlock title="LifeSync Monitor" label="ウォッチミーモニター" class="lg:col-span-2">
+          <DemoBlock title="LifeSync Monitor" label="ライフシンクモニター" class="lg:col-span-2">
             <LifeSyncMonitor size="lg" class="border border-mist-400/30" />
           </DemoBlock>
         </div>

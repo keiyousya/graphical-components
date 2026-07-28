@@ -1,0 +1,537 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg";
+  class?: string;
+}
+
+const {
+  size = "md",
+  class: className = "",
+} = Astro.props;
+
+const sizes = {
+  sm: "h-48",
+  md: "h-64",
+  lg: "h-80",
+};
+---
+
+<div class:list={["code-stream relative bg-mist-100 overflow-hidden", sizes[size], className]}>
+  <canvas class="code-stream-canvas w-full h-full"></canvas>
+  <div class="absolute bottom-3 right-3 font-mono text-[9px] text-hml-400/50 tracking-wider">
+    &lt;stream/&gt;
+  </div>
+</div>
+
+<script>
+  import * as THREE from "three";
+
+  document.querySelectorAll<HTMLDivElement>(".code-stream").forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>(".code-stream-canvas");
+    if (!canvas) return;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf6f2f3);
+    scene.fog = new THREE.FogExp2(0xf6f2f3, 0.035);
+
+    const camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+    camera.position.set(0, 0, 1.5);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+    // -------------------------------------------------------
+    // Multi-line code blocks floating in 3D space
+    // -------------------------------------------------------
+
+    const codeBlocks = [
+      [
+        'package biosync',
+        '',
+        'import (',
+        '	"context"',
+        '	"fmt"',
+        '	"sync"',
+        '	"time"',
+        ')',
+        '',
+        'type Subject struct {',
+        '	ID        string',
+        '	Will      float64',
+        '	Harmony   bool',
+        '	Vitals    VitalSign',
+        '	mu        sync.RWMutex',
+        '}',
+        '',
+        'type VitalSign struct {',
+        '	HeartRate  int',
+        '	SpO2      float64',
+        '	BloodPres [2]int',
+        '	Temp      float64',
+        '}',
+        '',
+        'func (s *Subject) Scan(ctx context.Context) (*Report, error) {',
+        '	s.mu.RLock()',
+        '	defer s.mu.RUnlock()',
+        '',
+        '	if s.Will < 0.1 {',
+        '		return nil, fmt.Errorf("subject %s: will below threshold", s.ID)',
+        '	}',
+        '',
+        '	report := &Report{',
+        '		SubjectID: s.ID,',
+        '		Timestamp: time.Now(),',
+        '		Vitals:    s.Vitals,',
+        '		WillIndex: s.Will,',
+        '	}',
+        '',
+        '	select {',
+        '	case <-ctx.Done():',
+        '		return nil, ctx.Err()',
+        '	default:',
+        '		return report, nil',
+        '	}',
+        '}',
+      ],
+      [
+        'import {',
+        '  type Subject,',
+        '  type Emotion,',
+        '  type VitalSign,',
+        '  EmotionType,',
+        '} from "./types";',
+        '',
+        'interface HarmonyConfig {',
+        '  threshold: number;',
+        '  decayRate: number;',
+        '  scanInterval: number;',
+        '  maxRetries: number;',
+        '}',
+        '',
+        'class ConsciousnessEngine {',
+        '  private subjects: Map<string, Subject> = new Map();',
+        '  private config: HarmonyConfig;',
+        '  private isRunning = false;',
+        '',
+        '  constructor(config: HarmonyConfig) {',
+        '    this.config = config;',
+        '  }',
+        '',
+        '  async harmonize(id: string): Promise<void> {',
+        '    const subject = this.subjects.get(id);',
+        '    if (!subject) throw new Error(`Unknown subject: ${id}`);',
+        '',
+        '    const emotions = await this.scanEmotions(subject);',
+        '    const willIndex = emotions.reduce(',
+        '      (acc, e) => acc + e.intensity * e.weight,',
+        '      0,',
+        '    );',
+        '',
+        '    if (willIndex < this.config.threshold) {',
+        '      subject.harmony = false;',
+        '      await this.applyCorrection(subject, willIndex);',
+        '    }',
+        '',
+        '    subject.will = Math.max(0, willIndex);',
+        '    subject.lastScan = Date.now();',
+        '  }',
+        '',
+        '  private async scanEmotions(',
+        '    subject: Subject,',
+        '  ): Promise<Emotion[]> {',
+        '    const raw = await fetch(',
+        '      `/api/biosync/${subject.id}/emotions`,',
+        '    );',
+        '    return raw.json();',
+        '  }',
+        '',
+        '  private async applyCorrection(',
+        '    subject: Subject,',
+        '    currentWill: number,',
+        '  ): Promise<void> {',
+        '    const delta = this.config.threshold - currentWill;',
+        '    const dose = delta * this.config.decayRate;',
+        '    await fetch(`/api/medisync/${subject.id}/adjust`, {',
+        '      method: "POST",',
+        '      body: JSON.stringify({ dose }),',
+        '    });',
+        '  }',
+        '}',
+      ],
+      [
+        'use std::sync::{Arc, Mutex};',
+        'use std::collections::HashMap;',
+        'use tokio::time::{self, Duration};',
+        '',
+        '#[derive(Debug, Clone)]',
+        'pub struct Subject {',
+        '    pub id: String,',
+        '    pub will: f64,',
+        '    pub harmony: bool,',
+        '    vitals: Vitals,',
+        '}',
+        '',
+        '#[derive(Debug, Clone)]',
+        'struct Vitals {',
+        '    heart_rate: u32,',
+        '    spo2: f64,',
+        '    temperature: f64,',
+        '}',
+        '',
+        'impl Subject {',
+        '    pub async fn dissolve(&mut self) -> Result<(), SyncError> {',
+        '        while self.will > 0.0 {',
+        '            self.will -= 0.01;',
+        '            self.emit_event(Event::WillDecay {',
+        '                remaining: self.will,',
+        '            });',
+        '            time::sleep(Duration::from_millis(100)).await;',
+        '        }',
+        '',
+        '        self.harmony = false;',
+        '        self.emit_event(Event::Dissolved {',
+        '            subject_id: self.id.clone(),',
+        '        });',
+        '',
+        '        Ok(())',
+        '    }',
+        '',
+        '    fn emit_event(&self, event: Event) {',
+        '        tracing::info!(',
+        '            subject = %self.id,',
+        '            will = %self.will,',
+        '            "event: {:?}", event',
+        '        );',
+        '    }',
+        '}',
+        '',
+        'pub async fn run_monitor(',
+        '    subjects: Arc<Mutex<HashMap<String, Subject>>>,',
+        '    interval: Duration,',
+        ') {',
+        '    let mut ticker = time::interval(interval);',
+        '    loop {',
+        '        ticker.tick().await;',
+        '        let mut map = subjects.lock().unwrap();',
+        '        for (_, subject) in map.iter_mut() {',
+        '            if subject.will < 0.5 && subject.harmony {',
+        '                subject.harmony = false;',
+        '            }',
+        '        }',
+        '    }',
+        '}',
+      ],
+      [
+        'func NewMonitor(cfg *Config) *Monitor {',
+        '	m := &Monitor{',
+        '		subjects: make(map[string]*Subject),',
+        '		scanCh:   make(chan string, 256),',
+        '		done:     make(chan struct{}),',
+        '		interval: cfg.ScanInterval,',
+        '	}',
+        '	return m',
+        '}',
+        '',
+        'func (m *Monitor) Run(ctx context.Context) error {',
+        '	ticker := time.NewTicker(m.interval)',
+        '	defer ticker.Stop()',
+        '',
+        '	for {',
+        '		select {',
+        '		case <-ctx.Done():',
+        '			close(m.done)',
+        '			return ctx.Err()',
+        '		case <-ticker.C:',
+        '			m.mu.Lock()',
+        '			for id, s := range m.subjects {',
+        '				report, err := s.Scan(ctx)',
+        '				if err != nil {',
+        '					log.Printf("scan failed for %s: %v", id, err)',
+        '					continue',
+        '				}',
+        '				if report.WillIndex < HarmonyThreshold {',
+        '					m.alertCh <- Alert{',
+        '						SubjectID: id,',
+        '						Level:     AlertCritical,',
+        '						Message:   "will index below threshold",',
+        '					}',
+        '				}',
+        '			}',
+        '			m.mu.Unlock()',
+        '		case id := <-m.scanCh:',
+        '			if s, ok := m.subjects[id]; ok {',
+        '				go func() {',
+        '					if _, err := s.Scan(ctx); err != nil {',
+        '						log.Printf("manual scan error: %v", err)',
+        '					}',
+        '				}()',
+        '			}',
+        '		}',
+        '	}',
+        '}',
+      ],
+    ];
+
+    const SLOT_COUNT = 8;
+    const SPREAD_X = 4;
+    const SPREAD_Y = 2;
+    const SPREAD_Z = 2;
+    const FONT_SIZE = 28;
+    const LINE_HEIGHT = 34;
+    const CVS_W = 800;
+    const CVS_H = 1900;
+
+    interface Slot {
+      x: number; y: number; z: number;
+      scale: number;
+      opacity: number;
+      lines: string[];
+      // Flatten all chars across all lines for typing/erasing
+      totalChars: number;
+      phase: "typing" | "visible" | "erasing" | "idle";
+      charIndex: number;
+      timer: number;
+      typingSpeed: number;
+      visibleDuration: number;
+      erasingSpeed: number;
+      idleDuration: number;
+      mesh: THREE.Mesh;
+      cvs: HTMLCanvasElement;
+      ctx: CanvasRenderingContext2D;
+      tex: THREE.CanvasTexture;
+    }
+
+    function countChars(lines: string[]): number {
+      // Count total chars including newlines
+      return lines.reduce((sum, line) => sum + line.length + 1, 0) - 1;
+    }
+
+    const slots: Slot[] = [];
+
+    for (let i = 0; i < SLOT_COUNT; i++) {
+      const cvs = document.createElement("canvas");
+      cvs.width = CVS_W;
+      cvs.height = CVS_H;
+      const ctx = cvs.getContext("2d")!;
+      const tex = new THREE.CanvasTexture(cvs);
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+
+      const opacity = 0.6 + Math.random() * 0.4;
+      const scale = 8.0 + Math.random() * 4.0;
+      const aspect = CVS_W / CVS_H;
+      const geo = new THREE.PlaneGeometry(scale * aspect, scale);
+      const mat = new THREE.MeshBasicMaterial({
+        map: tex,
+        transparent: true,
+        opacity: 1,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+
+      const x = (Math.random() - 0.5) * SPREAD_X;
+      const y = (Math.random() - 0.5) * SPREAD_Y;
+      const z = (Math.random() - 0.5) * SPREAD_Z;
+      mesh.position.set(x, y, z);
+      scene.add(mesh);
+
+      const lines = codeBlocks[Math.floor(Math.random() * codeBlocks.length)];
+      const startTyping = Math.random() < 0.5;
+
+      slots.push({
+        x, y, z, scale, opacity,
+        lines,
+        totalChars: countChars(lines),
+        phase: startTyping ? "typing" : "idle",
+        charIndex: startTyping ? Math.floor(Math.random() * countChars(lines)) : 0,
+        timer: 0,
+        typingSpeed: 1 + Math.floor(Math.random() * 2),
+        visibleDuration: 80 + Math.floor(Math.random() * 100),
+        erasingSpeed: 1 + Math.floor(Math.random() * 2),
+        idleDuration: 40 + Math.floor(Math.random() * 60),
+        mesh, cvs, ctx, tex,
+      });
+    }
+
+    function renderSlotText(slot: Slot) {
+      const { ctx, cvs, tex, lines, charIndex, opacity, phase, totalChars } = slot;
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+      if (charIndex <= 0 && phase === "idle") return;
+
+      ctx.font = `${FONT_SIZE}px 'JetBrains Mono', monospace`;
+      ctx.textBaseline = "top";
+
+      // Determine how many chars to show and where erasing starts
+      let eraseUpTo = 0; // chars erased from start
+      let showUpTo = 0;  // chars typed so far
+
+      if (phase === "erasing") {
+        eraseUpTo = totalChars - charIndex;
+        showUpTo = totalChars;
+      } else {
+        eraseUpTo = 0;
+        showUpTo = charIndex;
+      }
+
+      // Draw line by line, char by char
+      let globalIdx = 0;
+      for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+        const line = lines[lineIdx];
+        const yPos = 8 + lineIdx * LINE_HEIGHT;
+
+        if (yPos > cvs.height - 10) break;
+
+        let xPos = 10;
+        for (let ci = 0; ci < line.length; ci++) {
+          if (globalIdx >= showUpTo) break;
+
+          if (globalIdx >= eraseUpTo) {
+            ctx.fillStyle = `rgba(180, 80, 100, ${opacity})`;
+            ctx.fillText(line[ci], xPos, yPos);
+          }
+          xPos += ctx.measureText(line[ci]).width;
+          globalIdx++;
+        }
+
+        // Account for newline char
+        globalIdx++;
+
+        // Cursor at end of typing
+        if (phase === "typing" && globalIdx > showUpTo && lineIdx === Math.floor(showUpTo / 20)) {
+          // Show cursor at current typing position
+        }
+      }
+
+      // Draw cursor during typing
+      if (phase === "typing") {
+        let cursorGlobal = 0;
+        for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+          const line = lines[lineIdx];
+          const yPos = 8 + lineIdx * LINE_HEIGHT;
+
+          for (let ci = 0; ci <= line.length; ci++) {
+            if (cursorGlobal === showUpTo) {
+              const textBefore = line.substring(0, ci);
+              const xPos = 10 + ctx.measureText(textBefore).width;
+              if (Math.floor(Date.now() / 400) % 2 === 0) {
+                ctx.fillStyle = `rgba(180, 80, 100, ${opacity})`;
+                ctx.fillRect(xPos, yPos, 2, FONT_SIZE);
+              }
+              break;
+            }
+            cursorGlobal++;
+          }
+          if (cursorGlobal > showUpTo) break;
+          cursorGlobal++; // newline
+        }
+      }
+
+      tex.needsUpdate = true;
+    }
+
+    function updateSlot(slot: Slot) {
+      slot.timer++;
+
+      switch (slot.phase) {
+        case "typing":
+          if (slot.timer % slot.typingSpeed === 0) {
+            slot.charIndex++;
+            if (slot.charIndex >= slot.totalChars) {
+              slot.phase = "visible";
+              slot.timer = 0;
+            }
+          }
+          break;
+
+        case "visible":
+          if (slot.timer >= slot.visibleDuration) {
+            slot.phase = "erasing";
+            slot.charIndex = slot.totalChars;
+            slot.timer = 0;
+          }
+          break;
+
+        case "erasing":
+          if (slot.timer % slot.erasingSpeed === 0) {
+            slot.charIndex--;
+            if (slot.charIndex <= 0) {
+              slot.phase = "idle";
+              slot.timer = 0;
+            }
+          }
+          break;
+
+        case "idle":
+          if (slot.timer >= slot.idleDuration) {
+            slot.lines = codeBlocks[Math.floor(Math.random() * codeBlocks.length)];
+            slot.totalChars = countChars(slot.lines);
+            slot.charIndex = 0;
+            slot.phase = "typing";
+            slot.timer = 0;
+            slot.typingSpeed = 1 + Math.floor(Math.random() * 2);
+            slot.visibleDuration = 80 + Math.floor(Math.random() * 100);
+            slot.erasingSpeed = 1 + Math.floor(Math.random() * 2);
+            slot.idleDuration = 40 + Math.floor(Math.random() * 60);
+          }
+          break;
+      }
+
+      renderSlotText(slot);
+    }
+
+    // Cross markers
+    const crossMat = new THREE.LineBasicMaterial({ color: 0xc8c0c2, transparent: true, opacity: 0.25 });
+    for (let i = 0; i < 12; i++) {
+      const x = (Math.random() - 0.5) * 12;
+      const y = (Math.random() - 0.5) * 8;
+      const z = (Math.random() - 0.5) * 10;
+      const s = 0.06;
+      scene.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x - s, y, z), new THREE.Vector3(x + s, y, z)]),
+        crossMat
+      ));
+      scene.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x, y - s, z), new THREE.Vector3(x, y + s, z)]),
+        crossMat
+      ));
+    }
+
+    let time = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      time += 0.005;
+
+      slots.forEach((slot) => {
+        updateSlot(slot);
+        slot.mesh.quaternion.copy(camera.quaternion);
+      });
+
+      camera.position.x = Math.sin(time * 0.3) * 1.0;
+      camera.position.y = Math.sin(time * 0.2) * 0.4;
+      camera.lookAt(0, 0, 0);
+
+      renderer.render(scene, camera);
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        observer.disconnect();
+        animate();
+      }
+    });
+    observer.observe(container);
+
+    const ro = new ResizeObserver(() => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+    ro.observe(container);
+  });
+</script>

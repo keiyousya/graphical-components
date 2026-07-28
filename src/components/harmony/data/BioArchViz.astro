@@ -32,141 +32,244 @@ const sizes = {
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf6f0f2);
-    scene.fog = new THREE.Fog(0xf6f0f2, 6, 18);
+    scene.fog = new THREE.Fog(0xf6f0f2, 8, 22);
 
     const camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
-    camera.position.set(0, 2, 8);
-    camera.lookAt(0, 1.5, 0);
+    camera.position.set(0, 3, 9);
+    camera.lookAt(0, 2.5, 0);
 
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     renderer.setSize(canvas.clientWidth, canvas.clientHeight);
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 
-    // Pink organic towers
-    const towerMat = new THREE.MeshStandardMaterial({
-      color: 0xd08090,
-      roughness: 0.5,
-      metalness: 0.1,
-      transparent: true,
-      opacity: 0.85,
-    });
+    // -------------------------------------------------------
+    // Bio-architecture tower:
+    //  - Horizontal stripes (louvers) wrapping the building
+    //  - Organic skeleton frame visible between stripes
+    //  - Semi-transparent, pink-tinted
+    // -------------------------------------------------------
 
-    const wireTowerMat = new THREE.MeshBasicMaterial({
-      color: 0xc07080,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.15,
-    });
-
-    // Create several organic towers
-    const towers: THREE.Group[] = [];
-    const towerData = [
-      { x: 0, z: 0, h: 4, r: 0.5 },
-      { x: -2, z: -1, h: 3.2, r: 0.4 },
-      { x: 1.8, z: -0.5, h: 3.6, r: 0.45 },
-      { x: -1, z: 1.5, h: 2.8, r: 0.35 },
-      { x: 2.5, z: 1, h: 2.4, r: 0.3 },
-      { x: -3, z: 0.5, h: 2, r: 0.3 },
-      { x: 3.5, z: -1.5, h: 2.6, r: 0.35 },
-    ];
-
-    towerData.forEach((t) => {
+    function createBioTower(
+      baseRadius: number,
+      height: number,
+      segments: number,
+      louverCount: number,
+    ): THREE.Group {
       const group = new THREE.Group();
 
-      // Main body - cylinder with organic shape
-      const geo = new THREE.CylinderGeometry(t.r * 0.7, t.r, t.h, 12, 8, true);
-
-      // Deform for organic look
-      const pos = geo.attributes.position;
-      for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i);
-        const y = pos.getY(i);
-        const z = pos.getZ(i);
-        const angle = Math.atan2(z, x);
-        const bulge = Math.sin(y * 2 + angle * 3) * t.r * 0.15;
-        const r = Math.sqrt(x * x + z * z) + bulge;
-        pos.setX(i, Math.cos(angle) * r);
-        pos.setZ(i, Math.sin(angle) * r);
-      }
-      geo.computeVertexNormals();
-
-      const mesh = new THREE.Mesh(geo, towerMat);
-      mesh.position.set(t.x, t.h / 2, t.z);
-      group.add(mesh);
-
-      // Wire overlay
-      const wireGeo = new THREE.CylinderGeometry(t.r * 0.72, t.r * 1.02, t.h, 12, 8, true);
-      const wireMesh = new THREE.Mesh(wireGeo, wireTowerMat);
-      wireMesh.position.set(t.x, t.h / 2, t.z);
-      group.add(wireMesh);
-
-      // Horizontal rings
-      for (let ring = 0; ring < 3; ring++) {
-        const ry = t.h * 0.2 + ring * t.h * 0.25;
-        const rr = t.r * (1 - ring * 0.1);
-        const ringGeo = new THREE.TorusGeometry(rr, 0.015, 4, 24);
-        const ringMat = new THREE.MeshBasicMaterial({
-          color: 0xe0a0b0,
-          transparent: true,
-          opacity: 0.4,
-        });
-        const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-        ringMesh.position.set(t.x, ry, t.z);
-        ringMesh.rotation.x = Math.PI / 2;
-        group.add(ringMesh);
+      // Profile function: slight organic bulge
+      function radiusAt(t: number): number {
+        // t: 0=bottom, 1=top
+        const taper = 1 - t * 0.3; // taper toward top
+        const bulge = Math.sin(t * Math.PI) * 0.15; // subtle mid-bulge
+        return baseRadius * (taper + bulge);
       }
 
-      scene.add(group);
-      towers.push(group);
+      // --- Horizontal louver rings (the dominant visual) ---
+      const louverMat = new THREE.MeshBasicMaterial({
+        color: 0xd88898,
+        transparent: true,
+        opacity: 0.35,
+        side: THREE.DoubleSide,
+      });
+
+      for (let i = 0; i < louverCount; i++) {
+        const t = i / louverCount;
+        const y = t * height;
+        const r = radiusAt(t);
+        const louverHeight = height / louverCount * 0.35;
+
+        const geo = new THREE.CylinderGeometry(
+          r * 0.98, r, louverHeight, segments, 1, true
+        );
+        const mesh = new THREE.Mesh(geo, louverMat);
+        mesh.position.y = y;
+        group.add(mesh);
+      }
+
+      // --- Louver edge lines (white stripe borders) ---
+      const stripeMat = new THREE.LineBasicMaterial({
+        color: 0xf0e0e5,
+        transparent: true,
+        opacity: 0.6,
+      });
+
+      for (let i = 0; i <= louverCount; i++) {
+        const t = i / louverCount;
+        const y = t * height;
+        const r = radiusAt(t);
+
+        const points: THREE.Vector3[] = [];
+        for (let s = 0; s <= segments; s++) {
+          const angle = (s / segments) * Math.PI * 2;
+          points.push(new THREE.Vector3(
+            Math.cos(angle) * r,
+            y,
+            Math.sin(angle) * r,
+          ));
+        }
+        const geo = new THREE.BufferGeometry().setFromPoints(points);
+        group.add(new THREE.Line(geo, stripeMat));
+      }
+
+      // --- Organic skeleton frame (curved vertical members between louvers) ---
+      const skeletonMat = new THREE.LineBasicMaterial({
+        color: 0xc07080,
+        transparent: true,
+        opacity: 0.4,
+      });
+
+      // Main vertical ribs with organic curves
+      const ribCount = Math.floor(segments / 2);
+      for (let r = 0; r < ribCount; r++) {
+        const baseAngle = (r / ribCount) * Math.PI * 2;
+        const points: THREE.Vector3[] = [];
+
+        for (let i = 0; i <= 30; i++) {
+          const t = i / 30;
+          const y = t * height;
+          const rad = radiusAt(t) * 1.01;
+          // Organic wobble in angle
+          const wobble = Math.sin(t * Math.PI * 3 + r * 1.7) * 0.15;
+          const angle = baseAngle + wobble;
+          points.push(new THREE.Vector3(
+            Math.cos(angle) * rad,
+            y,
+            Math.sin(angle) * rad,
+          ));
+        }
+
+        const curve = new THREE.CatmullRomCurve3(points);
+        const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(40));
+        group.add(new THREE.Line(geo, skeletonMat));
+      }
+
+      // Cross-bracing: organic curves connecting ribs (voronoi-like skeleton)
+      const braceMat = new THREE.LineBasicMaterial({
+        color: 0xc07888,
+        transparent: true,
+        opacity: 0.25,
+      });
+
+      for (let r = 0; r < ribCount; r++) {
+        const braceCount = 3 + Math.floor(Math.random() * 2);
+        for (let b = 0; b < braceCount; b++) {
+          const t0 = 0.1 + Math.random() * 0.7;
+          const t1 = t0 + 0.08 + Math.random() * 0.15;
+          if (t1 > 0.95) continue;
+
+          const angle0 = (r / ribCount) * Math.PI * 2;
+          const angle1 = ((r + 1) / ribCount) * Math.PI * 2;
+
+          const midT = (t0 + t1) / 2;
+          const midAngle = (angle0 + angle1) / 2 + (Math.random() - 0.5) * 0.3;
+          const midRad = radiusAt(midT) * (1.02 + Math.random() * 0.03);
+
+          const p0 = new THREE.Vector3(
+            Math.cos(angle0) * radiusAt(t0) * 1.01,
+            t0 * height,
+            Math.sin(angle0) * radiusAt(t0) * 1.01,
+          );
+          const pMid = new THREE.Vector3(
+            Math.cos(midAngle) * midRad,
+            midT * height,
+            Math.sin(midAngle) * midRad,
+          );
+          const p1 = new THREE.Vector3(
+            Math.cos(angle1) * radiusAt(t1) * 1.01,
+            t1 * height,
+            Math.sin(angle1) * radiusAt(t1) * 1.01,
+          );
+
+          const curve = new THREE.QuadraticBezierCurve3(p0, pMid, p1);
+          const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(12));
+          group.add(new THREE.Line(geo, braceMat));
+        }
+      }
+
+      // --- Glass shell (very transparent) ---
+      const glassMat = new THREE.MeshBasicMaterial({
+        color: 0xe8b0b8,
+        transparent: true,
+        opacity: 0.06,
+        side: THREE.DoubleSide,
+      });
+
+      // Build shell as lathe
+      const shellProfile: THREE.Vector2[] = [];
+      for (let i = 0; i <= 20; i++) {
+        const t = i / 20;
+        shellProfile.push(new THREE.Vector2(radiusAt(t), t * height));
+      }
+      const shellGeo = new THREE.LatheGeometry(shellProfile, segments);
+      group.add(new THREE.Mesh(shellGeo, glassMat));
+
+      return group;
+    }
+
+    // --- Place towers ---
+    const towerConfigs = [
+      { x: 0, z: 0, r: 0.6, h: 5.5, seg: 16, louvers: 20 },
+      { x: -2.2, z: -0.8, r: 0.45, h: 4.2, seg: 14, louvers: 16 },
+      { x: 2.0, z: -0.3, r: 0.5, h: 4.8, seg: 14, louvers: 18 },
+      { x: -1.0, z: 1.5, r: 0.35, h: 3.5, seg: 12, louvers: 14 },
+      { x: 2.8, z: 1.0, r: 0.4, h: 3.0, seg: 12, louvers: 12 },
+      { x: -3.2, z: 0.5, r: 0.3, h: 2.5, seg: 10, louvers: 10 },
+      { x: 3.8, z: -1.2, r: 0.35, h: 3.2, seg: 12, louvers: 12 },
+    ];
+
+    towerConfigs.forEach((cfg) => {
+      const tower = createBioTower(cfg.r, cfg.h, cfg.seg, cfg.louvers);
+      tower.position.set(cfg.x, 0, cfg.z);
+      scene.add(tower);
     });
 
-    // Ground plane
-    const groundGeo = new THREE.PlaneGeometry(20, 20);
-    const groundMat = new THREE.MeshStandardMaterial({
-      color: 0xf0e5e8,
-      roughness: 0.9,
-    });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    scene.add(ground);
-
-    // Bridge / connection lines
+    // --- Bridges between towers ---
     const bridgeMat = new THREE.LineBasicMaterial({
       color: 0xd09098,
       transparent: true,
       opacity: 0.3,
     });
+
     [[0, 1], [0, 2], [1, 3], [2, 4]].forEach(([a, b]) => {
-      const ta = towerData[a];
-      const tb = towerData[b];
+      const ta = towerConfigs[a];
+      const tb = towerConfigs[b];
+      const bridgeY = Math.min(ta.h, tb.h) * 0.65;
       const points = [
-        new THREE.Vector3(ta.x, ta.h * 0.7, ta.z),
-        new THREE.Vector3((ta.x + tb.x) / 2, Math.max(ta.h, tb.h) * 0.8, (ta.z + tb.z) / 2),
-        new THREE.Vector3(tb.x, tb.h * 0.7, tb.z),
+        new THREE.Vector3(ta.x, bridgeY, ta.z),
+        new THREE.Vector3(
+          (ta.x + tb.x) / 2,
+          bridgeY + 0.3,
+          (ta.z + tb.z) / 2,
+        ),
+        new THREE.Vector3(tb.x, bridgeY, tb.z),
       ];
       const curve = new THREE.QuadraticBezierCurve3(points[0], points[1], points[2]);
-      const bGeo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(20));
-      scene.add(new THREE.Line(bGeo, bridgeMat));
+      const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(20));
+      scene.add(new THREE.Line(geo, bridgeMat));
     });
 
-    // Lighting
-    scene.add(new THREE.AmbientLight(0xf8f0f2, 0.7));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.0);
-    sun.position.set(3, 5, 4);
-    scene.add(sun);
-    const fill = new THREE.DirectionalLight(0xffc0cc, 0.3);
-    fill.position.set(-3, 2, -2);
-    scene.add(fill);
+    // --- Ground ---
+    const groundGeo = new THREE.PlaneGeometry(24, 24);
+    const groundMat = new THREE.MeshBasicMaterial({
+      color: 0xf0e5e8,
+    });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+
+    // --- Light (minimal, for MeshBasic mostly unused but keeps consistent) ---
+    scene.add(new THREE.AmbientLight(0xffffff, 1));
 
     let time = 0;
-    let animId: number;
 
     function animate() {
-      animId = requestAnimationFrame(animate);
-      time += 0.005;
+      requestAnimationFrame(animate);
+      time += 0.003;
 
-      camera.position.x = Math.sin(time * 0.5) * 2;
-      camera.lookAt(0, 1.5, 0);
+      camera.position.x = Math.sin(time * 0.4) * 2.5;
+      camera.position.z = 9 + Math.cos(time * 0.4) * 1.5;
+      camera.lookAt(0, 2.5, 0);
 
       renderer.render(scene, camera);
     }

@@ -21,111 +21,163 @@ const sizes = {
 </div>
 
 <script>
+  import * as THREE from "three";
+
   document.querySelectorAll<HTMLDivElement>(".voronoi-field").forEach((container) => {
     const canvas = container.querySelector<HTMLCanvasElement>(".voronoi-canvas");
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
 
-    const resize = () => {
-      const rect = container.getBoundingClientRect();
-      canvas.width = rect.width * devicePixelRatio;
-      canvas.height = rect.height * devicePixelRatio;
-      ctx.scale(devicePixelRatio, devicePixelRatio);
-    };
-    resize();
+    const scene = new THREE.Scene();
 
-    const w = () => canvas.width / devicePixelRatio;
-    const h = () => canvas.height / devicePixelRatio;
+    const camera = new THREE.PerspectiveCamera(70, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+    camera.position.set(0, 0, 0);
 
-    // Generate Voronoi seed points
-    const pointCount = 40;
-    const points: { x: number; y: number; vx: number; vy: number }[] = [];
-    for (let i = 0; i < pointCount; i++) {
-      points.push({
-        x: Math.random(),
-        y: Math.random(),
-        vx: (Math.random() - 0.5) * 0.0003,
-        vy: (Math.random() - 0.5) * 0.0003,
-      });
-    }
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 
-    function drawVoronoi() {
-      const cw = w();
-      const ch = h();
-      ctx!.clearRect(0, 0, cw, ch);
+    // -------------------------------------------------------
+    // Voronoi cell wall — Worley noise fragment shader on
+    // the inside of a sphere, simulating the organic room
+    // from the movie.
+    // -------------------------------------------------------
 
-      // Fill background
-      ctx!.fillStyle = "oklch(0.97 0.004 350)";
-      ctx!.fillRect(0, 0, cw, ch);
+    const vertexShader = `
+      varying vec3 vPosition;
+      varying vec3 vNormal;
+      varying vec2 vUv;
 
-      // For each pixel pair, find closest points (simplified - draw edges only)
-      const resolution = 4;
-      const grid: number[][] = [];
-      for (let y = 0; y < ch; y += resolution) {
-        const row: number[] = [];
-        for (let x = 0; x < cw; x += resolution) {
-          let minDist = Infinity;
-          let minIdx = 0;
-          for (let i = 0; i < points.length; i++) {
-            const dx = x / cw - points[i].x;
-            const dy = y / ch - points[i].y;
-            const d = dx * dx + dy * dy;
-            if (d < minDist) {
-              minDist = d;
-              minIdx = i;
+      void main() {
+        vPosition = position;
+        vNormal = normal;
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `;
+
+    const fragmentShader = `
+      uniform float uTime;
+      varying vec3 vPosition;
+      varying vec3 vNormal;
+      varying vec2 vUv;
+
+      // Hash function for pseudo-random
+      vec3 hash3(vec3 p) {
+        p = vec3(
+          dot(p, vec3(127.1, 311.7, 74.7)),
+          dot(p, vec3(269.5, 183.3, 246.1)),
+          dot(p, vec3(113.5, 271.9, 124.6))
+        );
+        return fract(sin(p) * 43758.5453123);
+      }
+
+      // 3D Worley noise — returns (F1, F2) distances
+      vec2 worley(vec3 p) {
+        vec3 i_st = floor(p);
+        vec3 f_st = fract(p);
+
+        float d1 = 10.0; // closest
+        float d2 = 10.0; // second closest
+
+        for (int x = -1; x <= 1; x++) {
+          for (int y = -1; y <= 1; y++) {
+            for (int z = -1; z <= 1; z++) {
+              vec3 neighbor = vec3(float(x), float(y), float(z));
+              vec3 point = hash3(i_st + neighbor);
+
+              // Slight animation
+              point = 0.5 + 0.5 * sin(uTime * 0.15 + 6.2831 * point);
+
+              vec3 diff = neighbor + point - f_st;
+              float dist = length(diff);
+
+              if (dist < d1) {
+                d2 = d1;
+                d1 = dist;
+              } else if (dist < d2) {
+                d2 = dist;
+              }
             }
           }
-          row.push(minIdx);
         }
-        grid.push(row);
+
+        return vec2(d1, d2);
       }
 
-      // Draw edges where neighboring pixels belong to different regions
-      ctx!.fillStyle = "oklch(0.82 0.012 350)";
-      for (let y = 0; y < grid.length - 1; y++) {
-        for (let x = 0; x < grid[y].length - 1; x++) {
-          if (grid[y][x] !== grid[y][x + 1] || grid[y][x] !== grid[y + 1][x]) {
-            ctx!.fillRect(x * resolution, y * resolution, resolution, resolution);
-          }
-        }
+      void main() {
+        // Use 3D position for seamless pattern on sphere
+        vec3 p = vPosition * 2.5;
+
+        vec2 w = worley(p);
+
+        // Edge detection: thin dark lines at cell borders
+        float edge = smoothstep(0.0, 0.08, w.y - w.x);
+
+        // Cell interior: subtle shading based on distance from center
+        float cellShade = smoothstep(0.0, 0.5, w.x);
+
+        // Base colors — white/light gray cells with darker edges
+        vec3 cellColor = vec3(0.94, 0.92, 0.92); // light warm white
+        vec3 edgeColor = vec3(0.72, 0.68, 0.70); // warm gray for edges
+        vec3 innerColor = vec3(0.88, 0.86, 0.86); // slightly darker cell center
+
+        // Mix cell interior (subtle bump-like shading)
+        vec3 color = mix(innerColor, cellColor, cellShade);
+
+        // Apply edge
+        color = mix(edgeColor, color, edge);
+
+        // Subtle depth based on viewing angle
+        float fresnel = 1.0 - abs(dot(normalize(vNormal), vec3(0.0, 0.0, 1.0)));
+        color *= 1.0 - fresnel * 0.15;
+
+        gl_FragColor = vec4(color, 1.0);
       }
+    `;
 
-      // Draw cell centers as small crosses
-      ctx!.strokeStyle = "oklch(0.75 0.015 350)";
-      ctx!.lineWidth = 0.8;
-      points.forEach((p) => {
-        const px = p.x * cw;
-        const py = p.y * ch;
-        ctx!.beginPath();
-        ctx!.moveTo(px - 3, py);
-        ctx!.lineTo(px + 3, py);
-        ctx!.stroke();
-        ctx!.beginPath();
-        ctx!.moveTo(px, py - 3);
-        ctx!.lineTo(px, py + 3);
-        ctx!.stroke();
-      });
+    // Sphere viewed from inside
+    const sphereGeo = new THREE.SphereGeometry(5, 64, 64);
+    const material = new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      uniforms: {
+        uTime: { value: 0 },
+      },
+      side: THREE.BackSide,
+    });
 
-      // Update points
-      points.forEach((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < 0 || p.x > 1) p.vx *= -1;
-        if (p.y < 0 || p.y > 1) p.vy *= -1;
-      });
+    const sphere = new THREE.Mesh(sphereGeo, material);
+    scene.add(sphere);
 
-      requestAnimationFrame(drawVoronoi);
+    let time = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      time += 0.01;
+      material.uniforms.uTime.value = time;
+
+      // Slow camera look-around
+      camera.rotation.y = Math.sin(time * 0.08) * 0.3;
+      camera.rotation.x = Math.sin(time * 0.06) * 0.15;
+
+      renderer.render(scene, camera);
     }
 
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
         observer.disconnect();
-        drawVoronoi();
+        animate();
       }
     });
     observer.observe(container);
 
-    window.addEventListener("resize", resize, { passive: true });
+    const ro = new ResizeObserver(() => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+    ro.observe(container);
   });
 </script>

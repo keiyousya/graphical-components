@@ -48,37 +48,123 @@ const sizes = {
 
     let time = 0;
 
-    // Vitals data
-    const vitals = [
-      { label: "HR", value: 72, unit: "bpm", color: "oklch(0.58 0.14 0 / 0.6)" },
-      { label: "SpO₂", value: 98, unit: "%", color: "oklch(0.60 0.16 155 / 0.6)" },
-      { label: "BP", value: 120, unit: "mmHg", color: "oklch(0.50 0.16 325 / 0.5)" },
-    ];
+    // -------------------------------------------------------
+    // ECG waveform generator (Lead II morphology)
+    // Flat isoelectric baseline with P, QRS, T waves
+    // -------------------------------------------------------
+    function ecgSample(phase: number): number {
+      // phase: 0..1 = one cardiac cycle
+      // Returns voltage as fraction of amplitude (-0.2 .. 1.0)
+      const p = phase % 1;
 
-    function drawHeartbeat(cx: number, cy: number, width: number, height: number, t: number) {
+      // P wave: small upward deflection (atrial depolarization)
+      // ~0.06-0.12 in cycle
+      if (p >= 0.06 && p < 0.12) {
+        const t = (p - 0.06) / 0.06;
+        return Math.sin(t * Math.PI) * 0.12;
+      }
+
+      // PR segment: flat
+      // 0.12 - 0.16
+
+      // Q wave: small downward deflection
+      if (p >= 0.16 && p < 0.18) {
+        const t = (p - 0.16) / 0.02;
+        return -Math.sin(t * Math.PI) * 0.08;
+      }
+
+      // R wave: tall sharp upward spike (ventricular depolarization)
+      if (p >= 0.18 && p < 0.22) {
+        const t = (p - 0.18) / 0.04;
+        return Math.sin(t * Math.PI) * 1.0;
+      }
+
+      // S wave: sharp downward deflection
+      if (p >= 0.22 && p < 0.25) {
+        const t = (p - 0.22) / 0.03;
+        return -Math.sin(t * Math.PI) * 0.2;
+      }
+
+      // ST segment: flat (return to baseline)
+      // 0.25 - 0.32
+
+      // T wave: broad upward deflection (ventricular repolarization)
+      if (p >= 0.32 && p < 0.44) {
+        const t = (p - 0.32) / 0.12;
+        return Math.sin(t * Math.PI) * 0.25;
+      }
+
+      // Isoelectric baseline (flat)
+      return 0;
+    }
+
+    // -------------------------------------------------------
+    // SpO2 plethysmograph waveform
+    // Sharp systolic upstroke, dicrotic notch, diastolic runoff
+    // -------------------------------------------------------
+    function spo2Sample(phase: number): number {
+      const p = phase % 1;
+
+      // Systolic upstroke: sharp rise
+      if (p >= 0.0 && p < 0.12) {
+        const t = p / 0.12;
+        return Math.pow(t, 1.5);
+      }
+
+      // Systolic peak & initial descent
+      if (p >= 0.12 && p < 0.25) {
+        const t = (p - 0.12) / 0.13;
+        return 1.0 - t * 0.35;
+      }
+
+      // Dicrotic notch (small dip then small bump)
+      if (p >= 0.25 && p < 0.30) {
+        const t = (p - 0.25) / 0.05;
+        return 0.65 - Math.sin(t * Math.PI) * 0.08;
+      }
+
+      // Dicrotic wave (small secondary peak)
+      if (p >= 0.30 && p < 0.38) {
+        const t = (p - 0.30) / 0.08;
+        return 0.65 + Math.sin(t * Math.PI) * 0.06 - t * 0.15;
+      }
+
+      // Diastolic runoff: gradual exponential decay
+      if (p >= 0.38 && p < 0.85) {
+        const t = (p - 0.38) / 0.47;
+        return 0.56 * Math.exp(-t * 2.5);
+      }
+
+      // Baseline before next beat
+      return 0.56 * Math.exp(-2.5) * (1 - ((p - 0.85) / 0.15));
+    }
+
+    // -------------------------------------------------------
+    // Respiration waveform (smooth sine-like)
+    // -------------------------------------------------------
+    function respSample(phase: number): number {
+      return Math.sin(phase * Math.PI * 2);
+    }
+
+    // -------------------------------------------------------
+    // Drawing functions
+    // -------------------------------------------------------
+    function drawWaveform(
+      ox: number, oy: number, width: number, amplitude: number,
+      sampleFn: (phase: number) => number,
+      cyclesVisible: number, speed: number,
+      color: string, lineWidth: number
+    ) {
       ctx!.beginPath();
-      ctx!.strokeStyle = "oklch(0.58 0.14 0 / 0.5)";
-      ctx!.lineWidth = 1.5;
+      ctx!.strokeStyle = color;
+      ctx!.lineWidth = lineWidth;
 
-      const points = 120;
+      const points = Math.floor(width / 1.5);
       for (let i = 0; i < points; i++) {
-        const x = cx + (i / points) * width;
-        const phase = (i / points) * Math.PI * 4 + t * 2;
-
-        let y = cy;
-        // QRS complex simulation
-        const pos = ((i / points + t * 0.05) % 1);
-        if (pos > 0.4 && pos < 0.42) {
-          y = cy - height * 0.3;
-        } else if (pos > 0.42 && pos < 0.44) {
-          y = cy + height * 0.8;
-        } else if (pos > 0.44 && pos < 0.46) {
-          y = cy - height * 0.2;
-        } else if (pos > 0.46 && pos < 0.48) {
-          y = cy;
-        } else {
-          y = cy + Math.sin(phase) * height * 0.05;
-        }
+        const x = ox + (i / points) * width;
+        const phase = (i / points) * cyclesVisible + time * speed;
+        const val = sampleFn(phase);
+        const y = oy - val * amplitude;
 
         if (i === 0) ctx!.moveTo(x, y);
         else ctx!.lineTo(x, y);
@@ -86,22 +172,23 @@ const sizes = {
       ctx!.stroke();
     }
 
-    function drawCircularGauge(cx: number, cy: number, radius: number, value: number, maxVal: number, color: string) {
-      const angle = (value / maxVal) * Math.PI * 1.5;
+    function drawLabel(
+      x: number, y: number,
+      label: string, value: string, unit: string,
+      color: string
+    ) {
+      ctx!.font = "10px 'JetBrains Mono', monospace";
+      ctx!.fillStyle = "oklch(0.60 0.008 350)";
+      ctx!.textAlign = "left";
+      ctx!.fillText(label, x, y);
 
-      // Background arc
-      ctx!.beginPath();
-      ctx!.arc(cx, cy, radius, -Math.PI * 0.75, Math.PI * 0.75);
-      ctx!.strokeStyle = "oklch(0.90 0.008 350)";
-      ctx!.lineWidth = 2;
-      ctx!.stroke();
+      ctx!.font = "600 16px Rajdhani, sans-serif";
+      ctx!.fillStyle = color;
+      ctx!.fillText(value, x, y + 16);
 
-      // Value arc
-      ctx!.beginPath();
-      ctx!.arc(cx, cy, radius, -Math.PI * 0.75, -Math.PI * 0.75 + angle);
-      ctx!.strokeStyle = color;
-      ctx!.lineWidth = 2;
-      ctx!.stroke();
+      ctx!.font = "10px 'JetBrains Mono', monospace";
+      ctx!.fillStyle = "oklch(0.65 0.008 350)";
+      ctx!.fillText(unit, x + ctx!.measureText(value).width + 3, y + 16);
     }
 
     function draw() {
@@ -109,71 +196,79 @@ const sizes = {
       const ch = h();
       ctx!.clearRect(0, 0, cw, ch);
 
-      // Background grid (subtle)
-      ctx!.strokeStyle = "oklch(0.90 0.008 350 / 0.5)";
+      // Background grid (5mm-equivalent)
+      const gridSmall = 10;
+      const gridLarge = 50;
+
+      // Small grid
+      ctx!.strokeStyle = "oklch(0.92 0.005 350 / 0.4)";
+      ctx!.lineWidth = 0.3;
+      for (let x = 0; x < cw; x += gridSmall) {
+        ctx!.beginPath(); ctx!.moveTo(x, 0); ctx!.lineTo(x, ch); ctx!.stroke();
+      }
+      for (let y = 0; y < ch; y += gridSmall) {
+        ctx!.beginPath(); ctx!.moveTo(0, y); ctx!.lineTo(cw, y); ctx!.stroke();
+      }
+
+      // Large grid
+      ctx!.strokeStyle = "oklch(0.88 0.008 350 / 0.5)";
       ctx!.lineWidth = 0.5;
-      for (let x = 0; x < cw; x += 20) {
-        ctx!.beginPath();
-        ctx!.moveTo(x, 0);
-        ctx!.lineTo(x, ch);
-        ctx!.stroke();
+      for (let x = 0; x < cw; x += gridLarge) {
+        ctx!.beginPath(); ctx!.moveTo(x, 0); ctx!.lineTo(x, ch); ctx!.stroke();
       }
-      for (let y = 0; y < ch; y += 20) {
-        ctx!.beginPath();
-        ctx!.moveTo(0, y);
-        ctx!.lineTo(cw, y);
-        ctx!.stroke();
+      for (let y = 0; y < ch; y += gridLarge) {
+        ctx!.beginPath(); ctx!.moveTo(0, y); ctx!.lineTo(cw, y); ctx!.stroke();
       }
 
-      // Heartbeat waveform
-      drawHeartbeat(0, ch * 0.35, cw, ch * 0.15, time);
+      const waveX = 70;
+      const waveW = cw - 80;
 
-      // Respiration wave
-      ctx!.beginPath();
-      ctx!.strokeStyle = "oklch(0.50 0.16 325 / 0.3)";
-      ctx!.lineWidth = 1;
-      for (let i = 0; i < 120; i++) {
-        const x = (i / 120) * cw;
-        const y = ch * 0.65 + Math.sin(i * 0.08 + time * 1.5) * ch * 0.06;
-        if (i === 0) ctx!.moveTo(x, y);
-        else ctx!.lineTo(x, y);
-      }
-      ctx!.stroke();
+      // --- ECG Lead II ---
+      const ecgY = ch * 0.22;
+      drawWaveform(
+        waveX, ecgY, waveW, ch * 0.12,
+        ecgSample, 3.5, 0.12,
+        "oklch(0.52 0.12 0 / 0.7)", 1.5
+      );
+      drawLabel(6, ecgY - ch * 0.1, "II", "72", "bpm", "oklch(0.52 0.12 0)");
 
-      // Circular gauges
-      const gaugeY = ch * 0.82;
-      const gaugeSpacing = cw / 4;
-      vitals.forEach((v, i) => {
-        const gx = gaugeSpacing * (i + 1);
-        drawCircularGauge(gx, gaugeY, 18, v.value, v.value * 1.3, v.color);
+      // --- SpO2 Plethysmograph ---
+      const spo2Y = ch * 0.52;
+      drawWaveform(
+        waveX, spo2Y, waveW, ch * 0.1,
+        spo2Sample, 3.5, 0.12,
+        "oklch(0.50 0.12 325 / 0.5)", 1.3
+      );
+      drawLabel(6, spo2Y - ch * 0.08, "SpO\u2082", "98", "%", "oklch(0.50 0.12 325)");
 
-        // Value text
-        ctx!.fillStyle = "oklch(0.38 0.005 350)";
-        ctx!.font = "600 11px Rajdhani, sans-serif";
+      // --- Bottom vitals bar ---
+      const barY = ch * 0.92;
+      ctx!.fillStyle = "oklch(0.94 0.005 350)";
+      ctx!.fillRect(0, barY - 4, cw, ch - barY + 8);
+      ctx!.strokeStyle = "oklch(0.88 0.008 350)";
+      ctx!.lineWidth = 0.5;
+      ctx!.beginPath(); ctx!.moveTo(0, barY - 4); ctx!.lineTo(cw, barY - 4); ctx!.stroke();
+
+      const barItems = [
+        { label: "HR", value: "72", unit: "bpm" },
+        { label: "BP", value: "120/78", unit: "mmHg" },
+        { label: "SpO\u2082", value: "98", unit: "%" },
+        { label: "TEMP", value: "36.5", unit: "\u00B0C" },
+        { label: "RESP", value: "16", unit: "/min" },
+      ];
+      const spacing = cw / (barItems.length + 1);
+      barItems.forEach((item, i) => {
+        const bx = spacing * (i + 1);
         ctx!.textAlign = "center";
-        ctx!.fillText(`${v.value}`, gx, gaugeY + 4);
-
-        // Label
-        ctx!.fillStyle = "oklch(0.60 0.008 350)";
-        ctx!.font = "10px 'JetBrains Mono', monospace";
-        ctx!.fillText(v.label, gx, gaugeY + 28);
+        ctx!.font = "9px 'JetBrains Mono', monospace";
+        ctx!.fillStyle = "oklch(0.65 0.005 350)";
+        ctx!.fillText(item.label, bx, barY + 6);
+        ctx!.font = "600 12px Rajdhani, sans-serif";
+        ctx!.fillStyle = "oklch(0.40 0.005 350)";
+        ctx!.fillText(`${item.value} ${item.unit}`, bx, barY + 19);
       });
 
-      // Cross markers
-      ctx!.strokeStyle = "oklch(0.80 0.01 350)";
-      ctx!.lineWidth = 0.5;
-      [[cw * 0.1, ch * 0.1], [cw * 0.9, ch * 0.15], [cw * 0.85, ch * 0.5]].forEach(([x, y]) => {
-        ctx!.beginPath();
-        ctx!.moveTo(x - 3, y);
-        ctx!.lineTo(x + 3, y);
-        ctx!.stroke();
-        ctx!.beginPath();
-        ctx!.moveTo(x, y - 3);
-        ctx!.lineTo(x, y + 3);
-        ctx!.stroke();
-      });
-
-      time += 0.02;
+      time += 0.015;
       requestAnimationFrame(draw);
     }
 

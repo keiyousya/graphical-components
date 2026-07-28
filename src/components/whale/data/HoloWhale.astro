@@ -1,0 +1,193 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg" | "xl";
+  class?: string;
+}
+
+const {
+  size = "lg",
+  class: className = "",
+} = Astro.props;
+
+const sizes = {
+  sm: "h-48",
+  md: "h-64",
+  lg: "h-80",
+  xl: "h-[32rem]",
+};
+---
+
+<div
+  class:list={["holo-whale relative w-full", sizes[size], className]}
+>
+  <canvas class="whale-canvas absolute inset-0 w-full h-full"></canvas>
+</div>
+
+<script>
+  import * as THREE from "three";
+  import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+  import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+  import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+  import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+
+  const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+  document.querySelectorAll<HTMLElement>(".holo-whale").forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>(".whale-canvas");
+    if (!canvas) return;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, 2, 0.1, 200);
+    camera.position.set(0, -5, 7);
+    camera.lookAt(0, -3, 0);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+
+    // === Post-processing bloom ===
+    const rect = container.getBoundingClientRect();
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(rect.width, rect.height),
+      0.6,   // strength
+      0.3,   // radius
+      0.4    // threshold
+    );
+    composer.addPass(bloomPass);
+
+    const holoCyan = new THREE.Color(0x55ccee);
+    const holoBlue = new THREE.Color(0x3399cc);
+    const holoWhite = new THREE.Color(0x99eeff);
+
+    const whaleGroup = new THREE.Group();
+    scene.add(whaleGroup);
+
+    // Track meshes for animated scan effect
+    const whaleMeshes: THREE.Mesh[] = [];
+
+    // === Load whale GLB model ===
+    const loader = new GLTFLoader();
+    loader.load(`${BASE_URL}/models/whale.glb`, (gltf) => {
+      const model = gltf.scene;
+
+      // Center and scale
+      const box = new THREE.Box3().setFromObject(model);
+      const center = box.getCenter(new THREE.Vector3());
+      const bSize = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(bSize.x, bSize.y, bSize.z);
+      const scale = 10 / maxDim;
+
+      model.position.sub(center);
+      model.scale.setScalar(scale);
+
+      // Rotate so the whale faces sideways (Z-axis model → X-axis view)
+      model.rotation.y = Math.PI / 2;
+
+      model.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          const geo = child.geometry;
+          whaleMeshes.push(child);
+
+          // Wireframe body
+          child.material = new THREE.MeshBasicMaterial({
+            color: holoCyan,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.15,
+          });
+
+          // Edge lines (bright contour)
+          const edges = new THREE.EdgesGeometry(geo, 20);
+          child.add(new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
+            color: holoWhite,
+            transparent: true,
+            opacity: 0.6,
+          })));
+
+          // Vertex points
+          child.add(new THREE.Points(geo, new THREE.PointsMaterial({
+            color: holoWhite,
+            size: 0.06,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending,
+            sizeAttenuation: true,
+          })));
+
+          // Network connections
+          const positions = geo.getAttribute("position");
+          if (positions) {
+            const vtxCount = positions.count;
+            const lineCount = Math.min(300, vtxCount * 2);
+            const linePos = new Float32Array(lineCount * 6);
+            for (let i = 0; i < lineCount; i++) {
+              const idx1 = Math.floor(Math.random() * vtxCount);
+              const idx2 = (idx1 + 1 + Math.floor(Math.random() * 5)) % vtxCount;
+              linePos[i * 6] = positions.getX(idx1);
+              linePos[i * 6 + 1] = positions.getY(idx1);
+              linePos[i * 6 + 2] = positions.getZ(idx1);
+              linePos[i * 6 + 3] = positions.getX(idx2);
+              linePos[i * 6 + 4] = positions.getY(idx2);
+              linePos[i * 6 + 5] = positions.getZ(idx2);
+            }
+            const lineGeo = new THREE.BufferGeometry();
+            lineGeo.setAttribute("position", new THREE.BufferAttribute(linePos, 3));
+            child.add(new THREE.LineSegments(lineGeo, new THREE.LineBasicMaterial({
+              color: holoBlue,
+              transparent: true,
+              opacity: 0.12,
+            })));
+          }
+        }
+      });
+
+      whaleGroup.add(model);
+    });
+
+    // === Mouse interaction ===
+    let mouseX = 0, mouseY = 0;
+    container.addEventListener("mousemove", (e) => {
+      const r = container.getBoundingClientRect();
+      mouseX = ((e.clientX - r.left) / r.width - 0.5) * 2;
+      mouseY = ((e.clientY - r.top) / r.height - 0.5) * 2;
+    });
+    container.addEventListener("mouseleave", () => {
+      mouseX = 0;
+      mouseY = 0;
+    });
+
+    // === Resize ===
+    function resize() {
+      const r = container.getBoundingClientRect();
+      renderer.setSize(r.width, r.height);
+      composer.setSize(r.width, r.height);
+      camera.aspect = r.width / r.height;
+      camera.updateProjectionMatrix();
+    }
+
+    // === Animation ===
+    let time = 0;
+    function animate() {
+      time += 0.01;
+
+      // Whale swimming motion
+      whaleGroup.rotation.y += (0.3 + mouseX * 0.5 - whaleGroup.rotation.y) * 0.02;
+      whaleGroup.rotation.x += (mouseY * 0.15 - whaleGroup.rotation.x) * 0.02;
+      whaleGroup.position.y = Math.sin(time * 0.5) * 0.3;
+      whaleGroup.position.x = Math.sin(time * 0.3) * 0.15;
+      whaleGroup.rotation.z = Math.sin(time * 0.4) * 0.03;
+
+      composer.render();
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    animate();
+    const resizeObserver = new ResizeObserver(() => resize());
+    resizeObserver.observe(container);
+  });
+</script>

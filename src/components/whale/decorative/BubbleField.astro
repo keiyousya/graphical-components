@@ -1,0 +1,31 @@
+---
+interface Props {
+  density?: "light" | "medium" | "dense";
+  class?: string;
+}
+
+const {
+  density = "medium",
+  class: className = "",
+} = Astro.props;
+
+const counts = { light: 12, medium: 24, dense: 40 };
+const count = counts[density];
+
+const bubbles = Array.from({ length: count }, (_, i) => ({
+  left: Math.random() * 100,
+  size: 2 + Math.random() * 4,
+  delay: Math.random() * 8,
+  duration: 6 + Math.random() * 6,
+  opacity: 0.1 + Math.random() * 0.3,
+}));
+---
+
+<div class:list={["fixed inset-0 pointer-events-none overflow-hidden z-0", className]}>
+  {bubbles.map((b) => (
+    <span
+      class="absolute rounded-full bg-biolum-400"
+      style={`left: ${b.left}%; bottom: -10px; width: ${b.size}px; height: ${b.size}px; opacity: ${b.opacity}; animation: bubble-rise ${b.duration}s ease-in-out ${b.delay}s infinite;`}
+    />
+  ))}
+</div>

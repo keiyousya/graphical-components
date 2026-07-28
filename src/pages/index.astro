@@ -67,6 +67,27 @@ import { url } from "../utils/paths";
               </svg>
             </div>
           </a>
+          <!-- Whale -->
+          <a href={url("/whale")} class="theme-card theme-whale">
+            <div class="theme-preview">
+              <div class="whale-wave w-1"></div>
+              <div class="whale-wave w-2"></div>
+              <div class="whale-wave w-3"></div>
+              <div class="whale-dot wd-1"></div>
+              <div class="whale-dot wd-2"></div>
+              <div class="whale-dot wd-3"></div>
+            </div>
+            <div class="theme-info">
+              <h2 class="theme-name">Whale</h2>
+              <p class="theme-tag">DEEP // HOLOGRAPHIC</p>
+              <p class="theme-desc">深海ホログラフィッククジラUI</p>
+            </div>
+            <div class="theme-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </div>
+          </a>
         </div>
       </main>
 
@@ -168,10 +189,10 @@ import { url } from "../utils/paths";
         grid-template-columns: 1fr;
         gap: 16px;
         width: 100%;
-        max-width: 800px;
+        max-width: 1000px;
       }
       @media (min-width: 640px) {
-        .theme-grid { grid-template-columns: 1fr 1fr; }
+        .theme-grid { grid-template-columns: 1fr 1fr 1fr; }
       }
 
       .theme-card {
@@ -210,6 +231,17 @@ import { url } from "../utils/paths";
       .theme-harmony .theme-tag { color: #a08088; }
       .theme-harmony .theme-desc { color: #907078; }
       .theme-harmony .theme-arrow { color: #a06070; }
+
+      /* Whale card */
+      .theme-whale { background: rgba(60, 120, 180, 0.04); }
+      .theme-whale:hover {
+        background: rgba(60, 120, 180, 0.08);
+        box-shadow: 0 4px 20px rgba(60, 120, 180, 0.1);
+      }
+      .theme-whale .theme-name { color: #3a7ab5; }
+      .theme-whale .theme-tag { color: #5a90b0; }
+      .theme-whale .theme-desc { color: #5080a0; }
+      .theme-whale .theme-arrow { color: #3a7ab5; }
 
       .theme-preview {
         height: 80px;
@@ -258,6 +290,25 @@ import { url } from "../utils/paths";
         color: rgba(180,100,120,0.3);
         animation: pulse 3s ease-in-out infinite;
       }
+
+      /* Whale preview elements */
+      .whale-wave {
+        position: absolute;
+        height: 1px;
+        border-radius: 50%;
+        background: rgba(60, 130, 200, 0.15);
+      }
+      .w-1 { width: 70%; top: 30px; left: 15%; background: linear-gradient(90deg, transparent, rgba(60,130,200,0.25), transparent); }
+      .w-2 { width: 50%; top: 45px; left: 25%; background: linear-gradient(90deg, transparent, rgba(60,130,200,0.18), transparent); }
+      .w-3 { width: 60%; top: 60px; left: 20%; background: linear-gradient(90deg, transparent, rgba(60,130,200,0.12), transparent); }
+      .whale-dot {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(60, 150, 220, 0.3);
+      }
+      .wd-1 { width: 4px; height: 4px; top: 25px; left: 30%; animation: pulse 3s ease-in-out infinite; }
+      .wd-2 { width: 3px; height: 3px; top: 40px; left: 55%; animation: pulse 4s ease-in-out infinite 1s; }
+      .wd-3 { width: 5px; height: 5px; top: 35px; right: 20%; animation: pulse 5s ease-in-out infinite 0.5s; }
 
       .theme-info { flex: 1; }
       .theme-name {

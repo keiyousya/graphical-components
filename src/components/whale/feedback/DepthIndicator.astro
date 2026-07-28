@@ -1,0 +1,25 @@
+---
+interface Props {
+  status?: "online" | "deep" | "surface" | "warning";
+  label?: string;
+  class?: string;
+}
+
+const {
+  status = "online",
+  label,
+  class: className = "",
+} = Astro.props;
+
+const statusStyles = {
+  online: "bg-sonar-400 shadow-[0_0_6px_oklch(0.72_0.16_155/0.5)]",
+  deep: "bg-ocean-400 shadow-[0_0_6px_oklch(0.55_0.14_220/0.5)]",
+  surface: "bg-biolum-400 shadow-[0_0_6px_oklch(0.62_0.16_210/0.5)]",
+  warning: "bg-bokeh-400 shadow-[0_0_6px_oklch(0.72_0.16_75/0.5)]",
+};
+---
+
+<div class:list={["inline-flex items-center gap-2", className]}>
+  <span class:list={["size-2 rounded-full animate-whale-pulse", statusStyles[status]]} />
+  {label && <span class="font-mono text-[10px] text-ocean-400 uppercase tracking-wider">{label}</span>}
+</div>

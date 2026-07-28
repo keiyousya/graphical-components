@@ -1,0 +1,131 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg";
+  class?: string;
+}
+
+const {
+  size = "md",
+  class: className = "",
+} = Astro.props;
+
+const sizes = {
+  sm: "h-48",
+  md: "h-64",
+  lg: "h-80",
+};
+---
+
+<div class:list={["voronoi-field relative bg-mist-100 overflow-hidden", sizes[size], className]}>
+  <canvas class="voronoi-canvas w-full h-full"></canvas>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLDivElement>(".voronoi-field").forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>(".voronoi-canvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const resize = () => {
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width * devicePixelRatio;
+      canvas.height = rect.height * devicePixelRatio;
+      ctx.scale(devicePixelRatio, devicePixelRatio);
+    };
+    resize();
+
+    const w = () => canvas.width / devicePixelRatio;
+    const h = () => canvas.height / devicePixelRatio;
+
+    // Generate Voronoi seed points
+    const pointCount = 40;
+    const points: { x: number; y: number; vx: number; vy: number }[] = [];
+    for (let i = 0; i < pointCount; i++) {
+      points.push({
+        x: Math.random(),
+        y: Math.random(),
+        vx: (Math.random() - 0.5) * 0.0003,
+        vy: (Math.random() - 0.5) * 0.0003,
+      });
+    }
+
+    function drawVoronoi() {
+      const cw = w();
+      const ch = h();
+      ctx!.clearRect(0, 0, cw, ch);
+
+      // Fill background
+      ctx!.fillStyle = "oklch(0.97 0.004 350)";
+      ctx!.fillRect(0, 0, cw, ch);
+
+      // For each pixel pair, find closest points (simplified - draw edges only)
+      const resolution = 4;
+      const grid: number[][] = [];
+      for (let y = 0; y < ch; y += resolution) {
+        const row: number[] = [];
+        for (let x = 0; x < cw; x += resolution) {
+          let minDist = Infinity;
+          let minIdx = 0;
+          for (let i = 0; i < points.length; i++) {
+            const dx = x / cw - points[i].x;
+            const dy = y / ch - points[i].y;
+            const d = dx * dx + dy * dy;
+            if (d < minDist) {
+              minDist = d;
+              minIdx = i;
+            }
+          }
+          row.push(minIdx);
+        }
+        grid.push(row);
+      }
+
+      // Draw edges where neighboring pixels belong to different regions
+      ctx!.fillStyle = "oklch(0.82 0.012 350)";
+      for (let y = 0; y < grid.length - 1; y++) {
+        for (let x = 0; x < grid[y].length - 1; x++) {
+          if (grid[y][x] !== grid[y][x + 1] || grid[y][x] !== grid[y + 1][x]) {
+            ctx!.fillRect(x * resolution, y * resolution, resolution, resolution);
+          }
+        }
+      }
+
+      // Draw cell centers as small crosses
+      ctx!.strokeStyle = "oklch(0.75 0.015 350)";
+      ctx!.lineWidth = 0.8;
+      points.forEach((p) => {
+        const px = p.x * cw;
+        const py = p.y * ch;
+        ctx!.beginPath();
+        ctx!.moveTo(px - 3, py);
+        ctx!.lineTo(px + 3, py);
+        ctx!.stroke();
+        ctx!.beginPath();
+        ctx!.moveTo(px, py - 3);
+        ctx!.lineTo(px, py + 3);
+        ctx!.stroke();
+      });
+
+      // Update points
+      points.forEach((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > 1) p.vx *= -1;
+        if (p.y < 0 || p.y > 1) p.vy *= -1;
+      });
+
+      requestAnimationFrame(drawVoronoi);
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        observer.disconnect();
+        drawVoronoi();
+      }
+    });
+    observer.observe(container);
+
+    window.addEventListener("resize", resize, { passive: true });
+  });
+</script>

@@ -1,9 +1,9 @@
 ---
-import CatalogLayout from "../../../layouts/CatalogLayout.astro";
-import PropTable from "../../../components/catalog/PropTable.astro";
-import ComponentDemo from "../../../components/catalog/ComponentDemo.astro";
-import { categories, components, getCategory } from "../../../data/components";
-import { url } from "../../../utils/paths";
+import CatalogLayout from "../../../../layouts/CyberCatalogLayout.astro";
+import PropTable from "../../../../components/cyber/catalog/PropTable.astro";
+import ComponentDemo from "../../../../components/cyber/catalog/ComponentDemo.astro";
+import { categories, components, getCategory } from "../../../../data/components";
+import { url } from "../../../../utils/paths";
 
 export function getStaticPaths() {
   return components.map((comp) => ({
@@ -27,7 +27,7 @@ function pascalCase(slug: string) {
 
 function generateUsageCode(comp: typeof component) {
   const name = pascalCase(comp.slug);
-  const importPath = `@/components/ui/${comp.category}/${name}.astro`;
+  const importPath = `@/components/cyber/${comp.category}/${name}.astro`;
   const requiredProps = comp.props.filter((p) => p.required);
   const optionalProps = comp.props.filter((p) => !p.required).slice(0, 2);
 
@@ -58,9 +58,9 @@ function generateUsageCode(comp: typeof component) {
   <div class="max-w-4xl">
     <!-- Breadcrumb -->
     <nav class="flex items-center gap-2 font-mono text-[10px] text-cyber-700 uppercase tracking-widest mb-6">
-      <a href={url("/components")} class="hover:text-cyber-400 transition-colors">Catalog</a>
+      <a href={url("/cyber/components")} class="hover:text-cyber-400 transition-colors">Catalog</a>
       <span class="text-cyber-800">/</span>
-      <a href={url(`/components/${component.category}`)} class="hover:text-cyber-400 transition-colors">
+      <a href={url(`/cyber/components/${component.category}`)} class="hover:text-cyber-400 transition-colors">
         {cat.nameJa}
       </a>
       <span class="text-cyber-800">/</span>
@@ -179,7 +179,7 @@ function generateUsageCode(comp: typeof component) {
         </div>
         <div class="border border-cyber-800/30 bg-void-600/20 p-3">
           <p class="font-mono text-[9px] text-cyber-700 tracking-widest uppercase mb-1">File</p>
-          <p class="font-mono text-[10px] text-cyber-500 break-all">ui/{component.category}/{pascalCase(component.slug)}.astro</p>
+          <p class="font-mono text-[10px] text-cyber-500 break-all">cyber/{component.category}/{pascalCase(component.slug)}.astro</p>
         </div>
       </div>
     </section>
@@ -188,7 +188,7 @@ function generateUsageCode(comp: typeof component) {
     <nav class="flex items-stretch gap-3 border-t border-cyber-800/30 pt-6">
       {prev ? (
         <a
-          href={url(`/components/${component.category}/${prev.slug}`)}
+          href={url(`/cyber/components/${component.category}/${prev.slug}`)}
           class="flex-1 group border border-cyber-800/30 p-4 transition-all hover:border-cyber-600/50 hover:bg-void-400/20"
         >
           <p class="font-mono text-[9px] text-cyber-700 tracking-widest uppercase mb-1">&#8592; Prev</p>
@@ -200,7 +200,7 @@ function generateUsageCode(comp: typeof component) {
 
       {next ? (
         <a
-          href={url(`/components/${component.category}/${next.slug}`)}
+          href={url(`/cyber/components/${component.category}/${next.slug}`)}
           class="flex-1 group border border-cyber-800/30 p-4 text-right transition-all hover:border-cyber-600/50 hover:bg-void-400/20"
         >
           <p class="font-mono text-[9px] text-cyber-700 tracking-widest uppercase mb-1">Next &#8594;</p>

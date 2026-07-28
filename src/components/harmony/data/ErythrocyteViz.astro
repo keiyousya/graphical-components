@@ -1,0 +1,269 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg";
+  class?: string;
+}
+
+const {
+  size = "md",
+  class: className = "",
+} = Astro.props;
+
+const sizes = {
+  sm: "h-48",
+  md: "h-64",
+  lg: "h-80",
+};
+---
+
+<div class:list={["erythrocyte-viz relative bg-mist-100 overflow-hidden", sizes[size], className]}>
+  <canvas class="erythrocyte-canvas w-full h-full"></canvas>
+  <div class="absolute top-3 left-3 font-mono text-[9px] text-hml-400/70 tracking-wider">
+    <div>HEMO.SCAN</div>
+    <div class="mt-0.5">RBC: <span class="text-rose-500">NOMINAL</span></div>
+  </div>
+  <div class="absolute bottom-3 right-3 font-mono text-[9px] text-hml-400/50 tracking-wider">
+    &lt;erythrocyte/&gt;
+  </div>
+</div>
+
+<script>
+  import * as THREE from "three";
+
+  document.querySelectorAll<HTMLDivElement>(".erythrocyte-viz").forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>(".erythrocyte-canvas");
+    if (!canvas) return;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf6f0f2);
+
+    const camera = new THREE.PerspectiveCamera(40, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+    camera.position.set(0, 3, 6);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+    // -------------------------------------------------------
+    // Red blood cell shape via LatheGeometry
+    // Uses the classic biconcave disc equation:
+    //   D(r) = sqrt(1 - r^2) * (c0 + c1*r^2 + c2*r^4)
+    // where r is normalized radius (0..1)
+    // Evans & Fung (1972) coefficients for human RBC
+    // -------------------------------------------------------
+    function rbcProfile(segments: number): THREE.Vector2[] {
+      const points: THREE.Vector2[] = [];
+      const R = 1.0; // normalised radius
+
+      for (let i = 0; i <= segments; i++) {
+        const r = (i / segments) * R;
+        const r2 = r * r;
+        const r4 = r2 * r2;
+
+        // Biconcave profile (Evans & Fung model, scaled)
+        const thickness = Math.sqrt(Math.max(0, 1 - r2)) * (0.207 + 2.003 * r2 - 1.123 * r4);
+
+        // y = height (half-thickness), x = radial distance
+        // LatheGeometry rotates around Y axis, so:
+        //   x = radial distance, y = height
+        points.push(new THREE.Vector2(r * 1.2, thickness * 0.5));
+      }
+
+      // Mirror back (bottom half) to close the shape
+      for (let i = segments; i >= 0; i--) {
+        const r = (i / segments) * R;
+        const r2 = r * r;
+        const r4 = r2 * r2;
+        const thickness = Math.sqrt(Math.max(0, 1 - r2)) * (0.207 + 2.003 * r2 - 1.123 * r4);
+        points.push(new THREE.Vector2(r * 1.2, -thickness * 0.5));
+      }
+
+      return points;
+    }
+
+    function createRBCWireframe(
+      radialSegments: number,
+      stretchX: number = 1.0,  // 長軸方向の伸び
+      stretchZ: number = 1.0,  // 短軸方向の潰れ
+      shear: number = 0.0,     // 非対称性（血流による片寄り）
+      tiltY: number = 0.0,     // 厚み方向の非対称（片側が少し薄い）
+    ): THREE.Group {
+      const profileSegs = 16;
+      const profile = rbcProfile(profileSegs);
+
+      const latheGeo = new THREE.LatheGeometry(profile, radialSegments);
+      const pos = latheGeo.attributes.position;
+      const idx = latheGeo.index;
+
+      // --- 楕円変形 + 非対称性 ---
+      for (let i = 0; i < pos.count; i++) {
+        let x = pos.getX(i);
+        let y = pos.getY(i);
+        let z = pos.getZ(i);
+
+        // 楕円化: X軸方向に伸ばし、Z軸方向に潰す
+        x *= stretchX;
+        z *= stretchZ;
+
+        // せん断変形: X位置に応じてZ方向にずらす（血流で押された感じ）
+        z += x * shear;
+
+        // 厚みの非対称: X位置に応じてY（厚み）を片側だけ少し潰す
+        // 正のX側が少し薄く、負のX側がやや厚い
+        const asymmetry = 1.0 + tiltY * (x / (1.2 * stretchX));
+        y *= asymmetry;
+
+        pos.setXYZ(i, x, y, z);
+      }
+      pos.needsUpdate = true;
+
+      const group = new THREE.Group();
+
+      // --- Semi-transparent mesh face (subtle fill color) ---
+      const fillMat = new THREE.MeshBasicMaterial({
+        color: 0xd06070,
+        transparent: true,
+        opacity: 0.08,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      const fillGeo = latheGeo.clone();
+      group.add(new THREE.Mesh(fillGeo, fillMat));
+
+      // --- Dots at each vertex ---
+      const dotGeo = new THREE.BufferGeometry();
+      dotGeo.setAttribute("position", new THREE.BufferAttribute(
+        new Float32Array(pos.array), 3
+      ));
+      const dotMat = new THREE.PointsMaterial({
+        color: 0xb85060,
+        size: 0.045,
+        transparent: true,
+        opacity: 0.8,
+      });
+      group.add(new THREE.Points(dotGeo, dotMat));
+
+      // --- Lines along edges (wireframe from index) ---
+      const lineMat = new THREE.LineBasicMaterial({
+        color: 0xc06878,
+        transparent: true,
+        opacity: 0.25,
+      });
+
+      // Collect unique edges from indexed triangles
+      const edgeSet = new Set<string>();
+      const edges: [number, number][] = [];
+      if (idx) {
+        for (let i = 0; i < idx.count; i += 3) {
+          const a = idx.getX(i);
+          const b = idx.getX(i + 1);
+          const c = idx.getX(i + 2);
+          for (const [p, q] of [[a, b], [b, c], [c, a]] as [number, number][]) {
+            const key = `${Math.min(p, q)}_${Math.max(p, q)}`;
+            if (!edgeSet.has(key)) {
+              edgeSet.add(key);
+              edges.push([p, q]);
+            }
+          }
+        }
+      }
+
+      // Build a single LineSegments geometry for all edges (much faster)
+      const linePositions = new Float32Array(edges.length * 6);
+      edges.forEach(([a, b], i) => {
+        linePositions[i * 6]     = pos.getX(a);
+        linePositions[i * 6 + 1] = pos.getY(a);
+        linePositions[i * 6 + 2] = pos.getZ(a);
+        linePositions[i * 6 + 3] = pos.getX(b);
+        linePositions[i * 6 + 4] = pos.getY(b);
+        linePositions[i * 6 + 5] = pos.getZ(b);
+      });
+      const lineGeo = new THREE.BufferGeometry();
+      lineGeo.setAttribute("position", new THREE.BufferAttribute(linePositions, 3));
+      group.add(new THREE.LineSegments(lineGeo, lineMat));
+
+      latheGeo.dispose();
+      return group;
+    }
+
+    // --- Place multiple RBCs ---
+    const rbcGroup = new THREE.Group();
+
+    const cells = [
+      // stretchX, stretchZ: 楕円化  shear: せん断  tiltY: 厚み非対称
+      { x: 0,    y: 0,    z: 0,    s: 1.0,  rx: 0.3,  rz: 0.1,  sx: 1.12, sz: 0.92, sh: 0.08,  ty: -0.12 },
+      { x: -2.8, y: 0.3,  z: -0.8, s: 0.85, rx: 0.9,  rz: -0.4, sx: 1.06, sz: 0.96, sh: -0.05, ty: 0.08  },
+      { x: 2.5,  y: -0.2, z: -0.3, s: 0.9,  rx: -0.5, rz: 0.7,  sx: 1.15, sz: 0.88, sh: 0.1,   ty: -0.15 },
+      { x: -1.2, y: -0.5, z: 1.8,  s: 0.7,  rx: 1.3,  rz: 0.3,  sx: 1.08, sz: 0.94, sh: -0.06, ty: 0.1   },
+      { x: 2.0,  y: 0.6,  z: 1.5,  s: 0.65, rx: -0.7, rz: -0.6, sx: 1.18, sz: 0.86, sh: 0.12,  ty: -0.1  },
+    ];
+
+    cells.forEach((c) => {
+      const rbc = createRBCWireframe(24, c.sx, c.sz, c.sh, c.ty);
+      rbc.position.set(c.x, c.y, c.z);
+      rbc.scale.setScalar(c.s);
+      rbc.rotation.x = c.rx;
+      rbc.rotation.z = c.rz;
+      rbcGroup.add(rbc);
+    });
+
+    scene.add(rbcGroup);
+
+    // Cross markers
+    const crossMat = new THREE.LineBasicMaterial({ color: 0xd0c0c5, transparent: true, opacity: 0.3 });
+    for (let i = 0; i < 10; i++) {
+      const x = (Math.random() - 0.5) * 8;
+      const y = (Math.random() - 0.5) * 4;
+      const z = (Math.random() - 0.5) * 3 - 2;
+      const s = 0.05;
+      scene.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x - s, y, z), new THREE.Vector3(x + s, y, z)]),
+        crossMat
+      ));
+      scene.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x, y - s, z), new THREE.Vector3(x, y + s, z)]),
+        crossMat
+      ));
+    }
+
+    scene.add(new THREE.AmbientLight(0xffffff, 1));
+
+    let time = 0;
+    const initialY = cells.map(c => c.y);
+
+    function animate() {
+      requestAnimationFrame(animate);
+      time += 0.008;
+
+      rbcGroup.rotation.y = time * 0.12;
+
+      rbcGroup.children.forEach((cell, i) => {
+        if (i < initialY.length) {
+          cell.position.y = initialY[i] + Math.sin(time * 0.4 + i * 1.3) * 0.15;
+        }
+        cell.rotation.x += 0.0008 * (i % 2 === 0 ? 1 : -1);
+        cell.rotation.z += 0.0004;
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        observer.disconnect();
+        animate();
+      }
+    });
+    observer.observe(container);
+
+    const ro = new ResizeObserver(() => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+    ro.observe(container);
+  });
+</script>

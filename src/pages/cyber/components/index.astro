@@ -1,7 +1,7 @@
 ---
-import CatalogLayout from "../../layouts/CatalogLayout.astro";
-import { categories, getComponentsByCategory } from "../../data/components";
-import { url } from "../../utils/paths";
+import CatalogLayout from "../../../layouts/CyberCatalogLayout.astro";
+import { categories, getComponentsByCategory } from "../../../data/components";
+import { url } from "../../../utils/paths";
 ---
 
 <CatalogLayout title="All Components | Graphical Components">
@@ -26,7 +26,7 @@ import { url } from "../../utils/paths";
           return (
             <section>
               <a
-                href={url(`/components/${cat.id}`)}
+                href={url(`/cyber/components/${cat.id}`)}
                 class="group flex items-center gap-3 mb-4 hover:text-cyber-300 transition-colors"
               >
                 <span class="text-xl opacity-50 group-hover:opacity-100 transition-opacity">
@@ -57,7 +57,7 @@ import { url } from "../../utils/paths";
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {items.map((item) => (
                     <a
-                      href={url(`/components/${cat.id}/${item.slug}`)}
+                      href={url(`/cyber/components/${cat.id}/${item.slug}`)}
                       class="group border border-cyber-800/40 bg-void-500/50 p-4 transition-all hover:border-cyber-600/60 hover:bg-void-400/30"
                     >
                       <div class="flex items-start justify-between mb-2">

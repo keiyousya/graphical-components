@@ -1,0 +1,65 @@
+---
+interface Props {
+  title?: string;
+  variant?: "default" | "vita" | "caution" | "critical";
+  class?: string;
+}
+
+const {
+  title,
+  variant = "default",
+  class: className = "",
+} = Astro.props;
+
+const borderColors = {
+  default: "border-mist-500",
+  vita: "border-vita-400/40",
+  caution: "border-caution-400/40",
+  critical: "border-critical-400/40",
+};
+
+const accentColors = {
+  default: "bg-rose-400",
+  vita: "bg-vita-400",
+  caution: "bg-caution-400",
+  critical: "bg-critical-400",
+};
+
+const titleColors = {
+  default: "text-ash-500",
+  vita: "text-vita-600",
+  caution: "text-caution-500",
+  critical: "text-critical-500",
+};
+---
+
+<div
+  class:list={[
+    "medi-card relative bg-mist-50/90 backdrop-blur-sm border overflow-hidden",
+    borderColors[variant],
+    className,
+  ]}
+>
+  {title && (
+    <div class="flex items-center gap-2.5 px-4 py-2.5 border-b border-mist-400/30 bg-mist-200/40">
+      <div class:list={["size-1.5 rounded-full animate-harmony-pulse", accentColors[variant]]} />
+      <span class:list={["font-display text-xs tracking-[0.15em] uppercase", titleColors[variant]]}>
+        {title}
+      </span>
+    </div>
+  )}
+  <div class="p-5">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .medi-card {
+    box-shadow: 0 1px 4px oklch(0.50 0.02 350 / 0.05);
+    transition: all 0.3s ease;
+  }
+  .medi-card:hover {
+    box-shadow: 0 4px 16px oklch(0.50 0.02 350 / 0.08);
+    transform: translateY(-1px);
+  }
+</style>

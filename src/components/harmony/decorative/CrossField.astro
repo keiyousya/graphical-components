@@ -1,0 +1,47 @@
+---
+interface Props {
+  density?: "sparse" | "normal" | "dense";
+  class?: string;
+}
+
+const {
+  density = "normal",
+  class: className = "",
+} = Astro.props;
+
+const counts = { sparse: 12, normal: 24, dense: 40 };
+const count = counts[density];
+---
+
+<div class:list={["cross-field relative overflow-hidden", className]}>
+  <slot />
+  {Array.from({ length: count }).map(() => {
+    const x = Math.random() * 100;
+    const y = Math.random() * 100;
+    const size = 6 + Math.random() * 6;
+    const opacity = 0.15 + Math.random() * 0.25;
+    return (
+      <svg
+        class="cross-marker absolute pointer-events-none"
+        style={`left: ${x}%; top: ${y}%; opacity: ${opacity};`}
+        width={size}
+        height={size}
+        viewBox="0 0 10 10"
+      >
+        <line x1="5" y1="2" x2="5" y2="8" stroke="oklch(0.45 0.006 350)" stroke-width="0.6" />
+        <line x1="2" y1="5" x2="8" y2="5" stroke="oklch(0.45 0.006 350)" stroke-width="0.6" />
+      </svg>
+    );
+  })}
+</div>
+
+<style>
+  .cross-marker {
+    animation: cross-drift 20s ease-in-out infinite;
+    animation-delay: calc(var(--delay, 0) * 1s);
+  }
+  @keyframes cross-drift {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(2px, -2px); }
+  }
+</style>

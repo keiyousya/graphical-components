@@ -1,0 +1,31 @@
+---
+interface Props {
+  density?: "sparse" | "normal" | "dense";
+  class?: string;
+}
+
+const {
+  density = "normal",
+  class: className = "",
+} = Astro.props;
+
+const gridSizes = { sparse: 32, normal: 20, dense: 12 };
+const gridSize = gridSizes[density];
+---
+
+<div class:list={["tiled-wall relative overflow-hidden", className]}>
+  <div class="tiled-wall-bg absolute inset-0 pointer-events-none"></div>
+  <div class="relative z-10">
+    <slot />
+  </div>
+</div>
+
+<style define:vars={{ gridSize: `${gridSize}px` }}>
+  .tiled-wall-bg {
+    background-image:
+      linear-gradient(oklch(0.82 0.012 350 / 0.35) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(0.82 0.012 350 / 0.35) 1px, transparent 1px);
+    background-size: var(--gridSize) var(--gridSize);
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+  }
+</style>

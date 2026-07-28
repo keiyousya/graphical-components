@@ -1,0 +1,83 @@
+---
+interface Props {
+  variant?: "info" | "caution" | "critical";
+  dismissible?: boolean;
+  class?: string;
+}
+
+const {
+  variant = "info",
+  dismissible = false,
+  class: className = "",
+} = Astro.props;
+
+const styles = {
+  info: {
+    border: "border-rose-300/40",
+    bg: "bg-rose-50/30",
+    icon: "text-rose-400",
+    accent: "border-l-rose-400",
+  },
+  caution: {
+    border: "border-caution-400/30",
+    bg: "bg-caution-300/10",
+    icon: "text-caution-500",
+    accent: "border-l-caution-400",
+  },
+  critical: {
+    border: "border-critical-400/30",
+    bg: "bg-critical-300/10",
+    icon: "text-critical-500",
+    accent: "border-l-critical-400",
+  },
+};
+
+const s = styles[variant];
+
+const icons = {
+  info: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z",
+  caution: "M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z",
+  critical: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z",
+};
+---
+
+<div
+  class:list={[
+    "harmony-alert relative flex items-start gap-3 px-4 py-3 border border-l-[3px]",
+    s.border,
+    s.bg,
+    s.accent,
+    className,
+  ]}
+>
+  <svg class:list={["size-4 mt-0.5 shrink-0", s.icon]} viewBox="0 0 24 24" fill="currentColor">
+    <path d={icons[variant]} />
+  </svg>
+  <div class="flex-1 font-ui text-sm text-ash-600 leading-relaxed">
+    <slot />
+  </div>
+  {dismissible && (
+    <button
+      class="harmony-alert-close shrink-0 text-ash-400 hover:text-ash-600 transition-colors cursor-pointer"
+      aria-label="閉じる"
+    >
+      <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  )}
+</div>
+
+<script>
+  document.querySelectorAll(".harmony-alert-close").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const alert = btn.closest(".harmony-alert");
+      if (alert) {
+        (alert as HTMLElement).style.opacity = "0";
+        (alert as HTMLElement).style.transform = "translateY(-4px)";
+        (alert as HTMLElement).style.transition = "all 0.3s ease";
+        setTimeout(() => alert.remove(), 300);
+      }
+    });
+  });
+</script>

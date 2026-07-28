@@ -1,0 +1,46 @@
+---
+interface Props {
+  text: string;
+  tag?: "h1" | "h2" | "h3" | "span" | "p";
+  class?: string;
+}
+
+const {
+  text,
+  tag: Tag = "h2",
+  class: className = "",
+} = Astro.props;
+---
+
+<div class:list={["dissolve-text relative inline-block", className]}>
+  <Tag class="font-display tracking-[0.08em] text-ash-700" data-text={text}>
+    {text}
+  </Tag>
+  <Tag
+    class="dissolve-ghost absolute inset-0 font-display tracking-[0.08em] text-rose-400/30 select-none"
+    aria-hidden="true"
+  >
+    {text}
+  </Tag>
+</div>
+
+<style>
+  .dissolve-ghost {
+    animation: dissolve-shift 4s ease-in-out infinite;
+    filter: blur(2px);
+  }
+  @keyframes dissolve-shift {
+    0%, 100% {
+      transform: translate(0, 0);
+      opacity: 0.2;
+    }
+    25% {
+      transform: translate(2px, -1px);
+      opacity: 0.4;
+    }
+    75% {
+      transform: translate(-1px, 1px);
+      opacity: 0.3;
+    }
+  }
+</style>

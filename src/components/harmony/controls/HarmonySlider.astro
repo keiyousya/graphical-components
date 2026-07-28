@@ -1,0 +1,97 @@
+---
+interface Props {
+  label?: string;
+  min?: number;
+  max?: number;
+  value?: number;
+  unit?: string;
+  class?: string;
+}
+
+const {
+  label,
+  min = 0,
+  max = 100,
+  value = 50,
+  unit = "%",
+  class: className = "",
+} = Astro.props;
+
+const percentage = ((value - min) / (max - min)) * 100;
+---
+
+<div class:list={["harmony-slider space-y-2", className]}>
+  {label && (
+    <div class="flex items-center justify-between">
+      <span class="font-display text-xs tracking-[0.1em] text-ash-500 uppercase">{label}</span>
+      <span class="harmony-slider-value font-mono text-xs text-rose-600">{value}{unit}</span>
+    </div>
+  )}
+  <div class="relative">
+    <input
+      type="range"
+      min={min}
+      max={max}
+      value={value}
+      class="harmony-range w-full"
+    />
+    <!-- Tick marks -->
+    <div class="flex justify-between px-0.5 mt-1">
+      {Array.from({ length: 5 }).map(() => (
+        <div class="w-px h-1.5 bg-mist-600" />
+      ))}
+    </div>
+  </div>
+</div>
+
+<style>
+  .harmony-range {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: linear-gradient(
+      to right,
+      oklch(0.58 0.14 0 / 0.4) 0%,
+      oklch(0.58 0.14 0 / 0.4) var(--pct, 50%),
+      oklch(0.86 0.01 350) var(--pct, 50%),
+      oklch(0.86 0.01 350) 100%
+    );
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  .harmony-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: oklch(0.995 0.001 0);
+    border: 2px solid oklch(0.58 0.14 0 / 0.6);
+    box-shadow: 0 0 6px oklch(0.58 0.14 0 / 0.15);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .harmony-range::-webkit-slider-thumb:hover {
+    border-color: oklch(0.58 0.14 0);
+    box-shadow: 0 0 10px oklch(0.58 0.14 0 / 0.25);
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLDivElement>(".harmony-slider").forEach((slider) => {
+    const range = slider.querySelector<HTMLInputElement>(".harmony-range");
+    const valueEl = slider.querySelector<HTMLSpanElement>(".harmony-slider-value");
+    if (!range) return;
+
+    const update = () => {
+      const pct = ((+range.value - +range.min) / (+range.max - +range.min)) * 100;
+      range.style.setProperty("--pct", pct + "%");
+      if (valueEl) {
+        const unit = valueEl.textContent?.replace(/[\d.-]/g, "") ?? "";
+        valueEl.textContent = range.value + unit;
+      }
+    };
+    update();
+    range.addEventListener("input", update);
+  });
+</script>

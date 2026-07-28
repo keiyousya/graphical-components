@@ -1,0 +1,42 @@
+---
+interface Props {
+  variant?: "default" | "rose" | "will";
+  class?: string;
+}
+
+const {
+  variant = "default",
+  class: className = "",
+} = Astro.props;
+
+const styles = {
+  default: "border-mist-500/50 bg-mist-50/70",
+  rose: "border-rose-300/30 bg-rose-50/40",
+  will: "border-will-300/30 bg-will-50/40",
+};
+---
+
+<div
+  class:list={[
+    "harmony-glass relative backdrop-blur-md p-5 border",
+    styles[variant],
+    className,
+  ]}
+>
+  <!-- Corner marks (minimal + style) -->
+  <span class="absolute top-1 left-1 text-[8px] text-mist-600 select-none">+</span>
+  <span class="absolute top-1 right-1 text-[8px] text-mist-600 select-none">+</span>
+  <span class="absolute bottom-1 left-1 text-[8px] text-mist-600 select-none">+</span>
+  <span class="absolute bottom-1 right-1 text-[8px] text-mist-600 select-none">+</span>
+  <slot />
+</div>
+
+<style>
+  .harmony-glass {
+    box-shadow: 0 2px 8px oklch(0.50 0.01 350 / 0.04);
+    transition: all 0.3s ease;
+  }
+  .harmony-glass:hover {
+    box-shadow: 0 4px 16px oklch(0.50 0.01 350 / 0.06);
+  }
+</style>

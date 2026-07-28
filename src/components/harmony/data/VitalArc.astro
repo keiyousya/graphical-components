@@ -1,0 +1,83 @@
+---
+interface Props {
+  value: number;
+  max?: number;
+  label?: string;
+  variant?: "default" | "vita" | "caution" | "critical";
+  class?: string;
+}
+
+const {
+  value,
+  max = 100,
+  label,
+  variant = "default",
+  class: className = "",
+} = Astro.props;
+
+const pct = Math.min(value / max, 1);
+const radius = 42;
+const circumference = 2 * Math.PI * radius;
+const dashoffset = circumference * (1 - pct * 0.75);
+
+const colors = {
+  default: { stroke: "oklch(0.58 0.14 0)", text: "text-rose-600" },
+  vita: { stroke: "oklch(0.60 0.16 155)", text: "text-vita-500" },
+  caution: { stroke: "oklch(0.70 0.14 70)", text: "text-caution-500" },
+  critical: { stroke: "oklch(0.60 0.18 22)", text: "text-critical-500" },
+};
+
+const c = colors[variant];
+---
+
+<div class:list={["vital-arc flex flex-col items-center gap-1", className]}>
+  <div class="relative">
+    <svg width="100" height="100" viewBox="0 0 100 100" class="-rotate-135">
+      <!-- Background arc -->
+      <circle
+        cx="50" cy="50" r={radius}
+        fill="none"
+        stroke="oklch(0.90 0.008 350)"
+        stroke-width="3"
+        stroke-dasharray={`${circumference * 0.75} ${circumference * 0.25}`}
+        stroke-linecap="round"
+      />
+      <!-- Value arc -->
+      <circle
+        cx="50" cy="50" r={radius}
+        fill="none"
+        stroke={c.stroke}
+        stroke-width="3"
+        stroke-dasharray={circumference}
+        stroke-dashoffset={dashoffset}
+        stroke-linecap="round"
+        class="transition-all duration-700"
+      />
+      <!-- Tick marks -->
+      {Array.from({ length: 9 }).map((_, i) => {
+        const angle = (-135 + i * (270 / 8)) * (Math.PI / 180);
+        const x1 = 50 + (radius + 4) * Math.cos(angle);
+        const y1 = 50 + (radius + 4) * Math.sin(angle);
+        const x2 = 50 + (radius + 7) * Math.cos(angle);
+        const y2 = 50 + (radius + 7) * Math.sin(angle);
+        return (
+          <line
+            x1={x1} y1={y1} x2={x2} y2={y2}
+            stroke="oklch(0.82 0.01 350)"
+            stroke-width="0.5"
+            class="rotate-135 origin-center"
+          />
+        );
+      })}
+    </svg>
+    <!-- Center value -->
+    <div class="absolute inset-0 flex flex-col items-center justify-center">
+      <span class:list={["font-display text-xl font-bold", c.text]}>
+        {value}
+      </span>
+    </div>
+  </div>
+  {label && (
+    <span class="font-mono text-[10px] text-ash-400 tracking-wider uppercase">{label}</span>
+  )}
+</div>

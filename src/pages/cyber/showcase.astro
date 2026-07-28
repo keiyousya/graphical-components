@@ -1,38 +1,38 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
-import GlassPanel from "../components/ui/panels/GlassPanel.astro";
-import HoloCard from "../components/ui/panels/HoloCard.astro";
-import TerminalPanel from "../components/ui/panels/TerminalPanel.astro";
-import NeonButton from "../components/ui/controls/NeonButton.astro";
-import HoloToggle from "../components/ui/controls/HoloToggle.astro";
-import CyberSlider from "../components/ui/controls/CyberSlider.astro";
-import GlitchText from "../components/ui/typography/GlitchText.astro";
-import TypeWriter from "../components/ui/typography/TypeWriter.astro";
-import HoloHeading from "../components/ui/typography/HoloHeading.astro";
-import StatusIndicator from "../components/ui/feedback/StatusIndicator.astro";
-import AlertBanner from "../components/ui/feedback/AlertBanner.astro";
-import LoadingSpinner from "../components/ui/feedback/LoadingSpinner.astro";
-import HudFrame from "../components/ui/hud/HudFrame.astro";
-import HudReticle from "../components/ui/hud/HudReticle.astro";
-import HudCompass from "../components/ui/hud/HudCompass.astro";
-import StatCounter from "../components/ui/data/StatCounter.astro";
-import ProgressArc from "../components/ui/data/ProgressArc.astro";
-import RadarSweep from "../components/ui/data/RadarSweep.astro";
-import HoloGlobe from "../components/ui/data/HoloGlobe.astro";
-import HoloObject from "../components/ui/data/HoloObject.astro";
-import WaveformDisplay from "../components/ui/data/WaveformDisplay.astro";
-import DataGrid from "../components/ui/data/DataGrid.astro";
-import HoloRing from "../components/ui/data/HoloRing.astro";
-import ArcReactor from "../components/ui/data/ArcReactor.astro";
-import HoloTerrain from "../components/ui/data/HoloTerrain.astro";
-import WarpTunnel from "../components/ui/data/WarpTunnel.astro";
-import HudOrbit from "../components/ui/data/HudOrbit.astro";
-import ParticleField from "../components/ui/decorative/ParticleField.astro";
-import CircuitPattern from "../components/ui/decorative/CircuitPattern.astro";
-import HudNav from "../components/ui/navigation/HudNav.astro";
-import SectionTitle from "../components/catalog/SectionTitle.astro";
-import DemoBlock from "../components/catalog/DemoBlock.astro";
-import { url } from "../utils/paths";
+import BaseLayout from "../../layouts/CyberLayout.astro";
+import GlassPanel from "../../components/cyber/panels/GlassPanel.astro";
+import HoloCard from "../../components/cyber/panels/HoloCard.astro";
+import TerminalPanel from "../../components/cyber/panels/TerminalPanel.astro";
+import NeonButton from "../../components/cyber/controls/NeonButton.astro";
+import HoloToggle from "../../components/cyber/controls/HoloToggle.astro";
+import CyberSlider from "../../components/cyber/controls/CyberSlider.astro";
+import GlitchText from "../../components/cyber/typography/GlitchText.astro";
+import TypeWriter from "../../components/cyber/typography/TypeWriter.astro";
+import HoloHeading from "../../components/cyber/typography/HoloHeading.astro";
+import StatusIndicator from "../../components/cyber/feedback/StatusIndicator.astro";
+import AlertBanner from "../../components/cyber/feedback/AlertBanner.astro";
+import LoadingSpinner from "../../components/cyber/feedback/LoadingSpinner.astro";
+import HudFrame from "../../components/cyber/hud/HudFrame.astro";
+import HudReticle from "../../components/cyber/hud/HudReticle.astro";
+import HudCompass from "../../components/cyber/hud/HudCompass.astro";
+import StatCounter from "../../components/cyber/data/StatCounter.astro";
+import ProgressArc from "../../components/cyber/data/ProgressArc.astro";
+import RadarSweep from "../../components/cyber/data/RadarSweep.astro";
+import HoloGlobe from "../../components/cyber/data/HoloGlobe.astro";
+import HoloObject from "../../components/cyber/data/HoloObject.astro";
+import WaveformDisplay from "../../components/cyber/data/WaveformDisplay.astro";
+import DataGrid from "../../components/cyber/data/DataGrid.astro";
+import HoloRing from "../../components/cyber/data/HoloRing.astro";
+import ArcReactor from "../../components/cyber/data/ArcReactor.astro";
+import HoloTerrain from "../../components/cyber/data/HoloTerrain.astro";
+import WarpTunnel from "../../components/cyber/data/WarpTunnel.astro";
+import HudOrbit from "../../components/cyber/data/HudOrbit.astro";
+import ParticleField from "../../components/cyber/decorative/ParticleField.astro";
+import CircuitPattern from "../../components/cyber/decorative/CircuitPattern.astro";
+import HudNav from "../../components/cyber/navigation/HudNav.astro";
+import SectionTitle from "../../components/cyber/catalog/SectionTitle.astro";
+import DemoBlock from "../../components/cyber/catalog/DemoBlock.astro";
+import { url } from "../../utils/paths";
 ---
 
 <BaseLayout title="Showcase | Graphical Components">
@@ -40,14 +40,14 @@ import { url } from "../utils/paths";
     <!-- Header -->
     <header class="sticky top-0 z-50 border-b border-cyber-800/40 bg-void-600/80 backdrop-blur-md px-6 py-3">
       <div class="max-w-7xl mx-auto flex items-center justify-between">
-        <a href={url("/")} class="flex items-center gap-3">
+        <a href={url("/cyber")} class="flex items-center gap-3">
           <div class="size-2 rounded-full bg-status-500 shadow-glow-status animate-pulse-glow"></div>
-          <span class="font-display text-xs tracking-[0.2em] text-cyber-400 uppercase">Graphical Components</span>
+          <span class="font-display text-xs tracking-[0.2em] text-cyber-400 uppercase">Cyberpunk</span>
         </a>
         <nav class="flex items-center gap-4 font-mono text-[10px] text-cyber-600">
-          <a href={url("/")} class="hover:text-cyber-400 transition-colors">HOME</a>
-          <a href={url("/showcase")} class="text-cyber-400">SHOWCASE</a>
-          <a href={url("/components")} class="hover:text-cyber-400 transition-colors">CATALOG</a>
+          <a href={url("/cyber")} class="hover:text-cyber-400 transition-colors">HOME</a>
+          <a href={url("/cyber/showcase")} class="text-cyber-400">SHOWCASE</a>
+          <a href={url("/cyber/components")} class="hover:text-cyber-400 transition-colors">CATALOG</a>
         </nav>
       </div>
     </header>

@@ -1,0 +1,34 @@
+---
+import "@fontsource/rajdhani/400.css";
+import "@fontsource/rajdhani/500.css";
+import "@fontsource/rajdhani/600.css";
+import "@fontsource/rajdhani/700.css";
+import "@fontsource/jetbrains-mono/400.css";
+import "@fontsource/jetbrains-mono/700.css";
+import "../styles/harmony.css";
+import { url } from "../utils/paths";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Harmony | Graphical Components",
+  description = "白基調の近未来ディストピア — Harmony Theme",
+} = Astro.props;
+---
+
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href={url("/favicon.svg")} />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-dvh bg-mist-100 text-ash-600 antialiased">
+    <slot />
+  </body>
+</html>

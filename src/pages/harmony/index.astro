@@ -1,0 +1,173 @@
+---
+import HarmonyLayout from "../../layouts/HarmonyLayout.astro";
+import { url } from "../../utils/paths";
+---
+
+<HarmonyLayout title="Harmony | Graphical Components">
+  <div class="relative min-h-dvh flex flex-col harmony-cross-field">
+    <!-- Light vignette -->
+    <div
+      class="pointer-events-none fixed inset-0 z-10 bg-[radial-gradient(ellipse_at_center,transparent_50%,oklch(0.93_0.008_350/0.5))]"
+    ></div>
+
+    <!-- Subtle scan -->
+    <div class="pointer-events-none fixed inset-0 z-20 harmony-scanlines"></div>
+
+    <!-- Header -->
+    <header
+      class="relative z-30 flex items-center justify-between border-b border-mist-500/30 px-6 py-3 bg-mist-50/60 backdrop-blur-sm"
+    >
+      <div class="flex items-center gap-3">
+        <div class="size-2 rounded-full bg-vita-400 animate-harmony-pulse"></div>
+        <span class="font-mono text-[10px] text-hml-400 tracking-[0.2em]">
+          &lt;?harmonized-markup ?&gt; // HARMONY.THEME
+        </span>
+      </div>
+      <a href={url("/")} class="font-mono text-[10px] text-ash-400 hover:text-rose-500 transition-colors">
+        &lt;themes/&gt;
+      </a>
+    </header>
+
+    <!-- Hero -->
+    <main class="relative z-30 flex-1 flex flex-col items-center justify-center px-6 py-20">
+      <!-- Decorative rings (organic / clean style) -->
+      <div class="relative mb-12">
+        <div
+          class="absolute -inset-12 rounded-full border border-mist-500/30 animate-harmony-breathe"
+        ></div>
+        <div
+          class="absolute -inset-20 rounded-full border border-rose-200/20"
+          style="animation: harmony-breathe 8s ease-in-out infinite reverse;"
+        ></div>
+        <div class="relative size-24 grid place-items-center">
+          <svg
+            viewBox="0 0 100 100"
+            class="size-full text-rose-400/60 animate-harmony-pulse"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="0.5"
+          >
+            <!-- Organic circle -->
+            <circle cx="50" cy="50" r="40" stroke-width="0.4" opacity="0.6" />
+            <circle cx="50" cy="50" r="30" stroke-width="0.3" opacity="0.4" />
+            <circle cx="50" cy="50" r="20" stroke-width="0.3" opacity="0.3" />
+            <!-- Cross markers -->
+            <line x1="50" y1="5" x2="50" y2="15" stroke-width="0.3" opacity="0.3" />
+            <line x1="50" y1="85" x2="50" y2="95" stroke-width="0.3" opacity="0.3" />
+            <line x1="5" y1="50" x2="15" y2="50" stroke-width="0.3" opacity="0.3" />
+            <line x1="85" y1="50" x2="95" y2="50" stroke-width="0.3" opacity="0.3" />
+            <!-- Center -->
+            <circle cx="50" cy="50" r="2" fill="currentColor" opacity="0.4" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- HML Title -->
+      <div class="text-center mb-2 animate-harmony-fade-in">
+        <span class="font-mono text-[10px] text-hml-300 tracking-wider block mb-3">
+          &lt;!DOCTYPE hml PUBLIC&gt;
+        </span>
+        <h1 class="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-ash-700 tracking-wider">
+          <span class="text-rose-500">&lt;</span>harmony<span class="text-rose-500">/&gt;</span>
+        </h1>
+      </div>
+
+      <!-- Subtitle -->
+      <p
+        class="font-mono text-sm text-hml-400 tracking-widest text-center mb-2 animate-harmony-fade-in"
+        style="animation-delay: 0.15s; animation-fill-mode: both;"
+      >
+        &lt;hml:lang=jy&gt;
+      </p>
+      <p
+        class="font-ui text-base md:text-lg text-ash-400 text-center max-w-xl animate-harmony-fade-in"
+        style="animation-delay: 0.3s; animation-fill-mode: both;"
+      >
+        白基調の近未来ディストピア
+        <span class="text-mist-600">&mdash;</span>
+        生命管理社会のUIコンポーネント集
+      </p>
+
+      <!-- CTA -->
+      <div
+        class="mt-10 flex flex-wrap items-center gap-4 animate-harmony-fade-in"
+        style="animation-delay: 0.45s; animation-fill-mode: both;"
+      >
+        <a
+          href={url("/harmony/showcase")}
+          class="group relative inline-flex items-center gap-3 border border-rose-400/60 bg-rose-50/30 px-8 py-3 font-display text-sm tracking-[0.12em] text-ash-700 uppercase transition-all hover:bg-rose-100/50 hover:shadow-rose"
+        >
+          <span>Showcase</span>
+          <svg
+            class="size-4 transition-transform group-hover:translate-x-1"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </a>
+        <a
+          href={url("/")}
+          class="group relative inline-flex items-center gap-3 border border-mist-500 px-8 py-3 font-display text-sm tracking-[0.12em] text-ash-400 uppercase transition-all hover:border-rose-300 hover:text-ash-600 hover:bg-rose-50/20"
+        >
+          <span>All Themes</span>
+        </a>
+      </div>
+    </main>
+
+    <!-- Component categories preview -->
+    <section class="relative z-30 border-t border-mist-500/30 bg-mist-200/30 backdrop-blur-sm">
+      <div class="max-w-6xl mx-auto px-6 py-16">
+        <h2 class="font-mono text-[10px] text-hml-400 tracking-[0.3em] mb-8 flex items-center gap-3">
+          <span class="inline-block w-8 h-px bg-rose-300/40"></span>
+          &lt;components/&gt;
+          <span class="inline-block w-8 h-px bg-rose-300/40"></span>
+        </h2>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { name: "パネル", nameEn: "Panels", icon: "hml", count: 3, anchor: "panels" },
+            { name: "データ表示", nameEn: "Data Display", icon: "body", count: 5, anchor: "data" },
+            { name: "コントロール", nameEn: "Controls", icon: "will", count: 3, anchor: "controls" },
+            { name: "フィードバック", nameEn: "Feedback", icon: "sense", count: 3, anchor: "feedback" },
+            { name: "タイポグラフィ", nameEn: "Typography", icon: "text", count: 3, anchor: "typography" },
+            { name: "装飾", nameEn: "Decorative", icon: "env", count: 3, anchor: "decorative" },
+            { name: "ナビゲーション", nameEn: "Navigation", icon: "nav", count: 1, anchor: "navigation" },
+          ].map((cat, i) => (
+            <a
+              href={url(`/harmony/showcase#${cat.anchor}`)}
+              class="group relative border border-mist-500/30 bg-mist-50/60 p-5 transition-all hover:border-rose-300/50 hover:bg-rose-50/20 hover:shadow-soft-sm animate-harmony-fade-in"
+              style={`animation-delay: ${0.05 * i}s; animation-fill-mode: both;`}
+            >
+              <span class="absolute top-1 left-1 text-[6px] text-mist-600 select-none">+</span>
+              <span class="absolute bottom-1 right-1 text-[6px] text-mist-600 select-none">+</span>
+
+              <div class="font-mono text-[10px] text-hml-300 mb-2 opacity-40 group-hover:opacity-70 transition-opacity">
+                &lt;{cat.icon}&gt;
+              </div>
+              <h3 class="font-display text-xs tracking-wider text-ash-500 group-hover:text-ash-700 transition-colors">
+                {cat.name}
+              </h3>
+              <p class="font-mono text-[10px] text-ash-300 mt-1">{cat.nameEn}</p>
+              <div class="mt-3 flex items-center gap-2">
+                <div class="h-px flex-1 bg-mist-500/30" />
+                <span class="font-mono text-[10px] text-ash-300">{cat.count} items</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer
+      class="relative z-30 border-t border-mist-500/20 bg-mist-200/40 px-6 py-4 flex items-center justify-between"
+    >
+      <span class="font-mono text-[10px] text-ash-300 tracking-widest">
+        &lt;/hml&gt; // HARMONY.v0.1.0
+      </span>
+      <span class="font-mono text-[10px] text-ash-300">
+        <span class="text-vita-500">&#9679;</span> LifeSync: ACTIVE
+      </span>
+    </footer>
+  </div>
+</HarmonyLayout>

@@ -1,0 +1,14 @@
+---
+interface Props {
+  class?: string;
+}
+
+const { class: className = "" } = Astro.props;
+---
+
+<div class:list={["voronoi-overlay relative overflow-hidden", className]}>
+  <div class="voronoi-bg absolute inset-0 pointer-events-none harmony-voronoi"></div>
+  <div class="relative z-10">
+    <slot />
+  </div>
+</div>

@@ -1,0 +1,191 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg";
+  class?: string;
+}
+
+const {
+  size = "md",
+  class: className = "",
+} = Astro.props;
+
+const sizes = {
+  sm: "h-48",
+  md: "h-64",
+  lg: "h-80",
+};
+---
+
+<div class:list={["bioarch-viz relative bg-mist-100 overflow-hidden", sizes[size], className]}>
+  <canvas class="bioarch-canvas w-full h-full"></canvas>
+  <div class="absolute top-3 right-3 font-mono text-[9px] text-rose-400/50 tracking-wider">
+    arch.sim
+  </div>
+</div>
+
+<script>
+  import * as THREE from "three";
+
+  document.querySelectorAll<HTMLDivElement>(".bioarch-viz").forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>(".bioarch-canvas");
+    if (!canvas) return;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf6f0f2);
+    scene.fog = new THREE.Fog(0xf6f0f2, 6, 18);
+
+    const camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+    camera.position.set(0, 2, 8);
+    camera.lookAt(0, 1.5, 0);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+    // Pink organic towers
+    const towerMat = new THREE.MeshStandardMaterial({
+      color: 0xd08090,
+      roughness: 0.5,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.85,
+    });
+
+    const wireTowerMat = new THREE.MeshBasicMaterial({
+      color: 0xc07080,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.15,
+    });
+
+    // Create several organic towers
+    const towers: THREE.Group[] = [];
+    const towerData = [
+      { x: 0, z: 0, h: 4, r: 0.5 },
+      { x: -2, z: -1, h: 3.2, r: 0.4 },
+      { x: 1.8, z: -0.5, h: 3.6, r: 0.45 },
+      { x: -1, z: 1.5, h: 2.8, r: 0.35 },
+      { x: 2.5, z: 1, h: 2.4, r: 0.3 },
+      { x: -3, z: 0.5, h: 2, r: 0.3 },
+      { x: 3.5, z: -1.5, h: 2.6, r: 0.35 },
+    ];
+
+    towerData.forEach((t) => {
+      const group = new THREE.Group();
+
+      // Main body - cylinder with organic shape
+      const geo = new THREE.CylinderGeometry(t.r * 0.7, t.r, t.h, 12, 8, true);
+
+      // Deform for organic look
+      const pos = geo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const y = pos.getY(i);
+        const z = pos.getZ(i);
+        const angle = Math.atan2(z, x);
+        const bulge = Math.sin(y * 2 + angle * 3) * t.r * 0.15;
+        const r = Math.sqrt(x * x + z * z) + bulge;
+        pos.setX(i, Math.cos(angle) * r);
+        pos.setZ(i, Math.sin(angle) * r);
+      }
+      geo.computeVertexNormals();
+
+      const mesh = new THREE.Mesh(geo, towerMat);
+      mesh.position.set(t.x, t.h / 2, t.z);
+      group.add(mesh);
+
+      // Wire overlay
+      const wireGeo = new THREE.CylinderGeometry(t.r * 0.72, t.r * 1.02, t.h, 12, 8, true);
+      const wireMesh = new THREE.Mesh(wireGeo, wireTowerMat);
+      wireMesh.position.set(t.x, t.h / 2, t.z);
+      group.add(wireMesh);
+
+      // Horizontal rings
+      for (let ring = 0; ring < 3; ring++) {
+        const ry = t.h * 0.2 + ring * t.h * 0.25;
+        const rr = t.r * (1 - ring * 0.1);
+        const ringGeo = new THREE.TorusGeometry(rr, 0.015, 4, 24);
+        const ringMat = new THREE.MeshBasicMaterial({
+          color: 0xe0a0b0,
+          transparent: true,
+          opacity: 0.4,
+        });
+        const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+        ringMesh.position.set(t.x, ry, t.z);
+        ringMesh.rotation.x = Math.PI / 2;
+        group.add(ringMesh);
+      }
+
+      scene.add(group);
+      towers.push(group);
+    });
+
+    // Ground plane
+    const groundGeo = new THREE.PlaneGeometry(20, 20);
+    const groundMat = new THREE.MeshStandardMaterial({
+      color: 0xf0e5e8,
+      roughness: 0.9,
+    });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+
+    // Bridge / connection lines
+    const bridgeMat = new THREE.LineBasicMaterial({
+      color: 0xd09098,
+      transparent: true,
+      opacity: 0.3,
+    });
+    [[0, 1], [0, 2], [1, 3], [2, 4]].forEach(([a, b]) => {
+      const ta = towerData[a];
+      const tb = towerData[b];
+      const points = [
+        new THREE.Vector3(ta.x, ta.h * 0.7, ta.z),
+        new THREE.Vector3((ta.x + tb.x) / 2, Math.max(ta.h, tb.h) * 0.8, (ta.z + tb.z) / 2),
+        new THREE.Vector3(tb.x, tb.h * 0.7, tb.z),
+      ];
+      const curve = new THREE.QuadraticBezierCurve3(points[0], points[1], points[2]);
+      const bGeo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(20));
+      scene.add(new THREE.Line(bGeo, bridgeMat));
+    });
+
+    // Lighting
+    scene.add(new THREE.AmbientLight(0xf8f0f2, 0.7));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.0);
+    sun.position.set(3, 5, 4);
+    scene.add(sun);
+    const fill = new THREE.DirectionalLight(0xffc0cc, 0.3);
+    fill.position.set(-3, 2, -2);
+    scene.add(fill);
+
+    let time = 0;
+    let animId: number;
+
+    function animate() {
+      animId = requestAnimationFrame(animate);
+      time += 0.005;
+
+      camera.position.x = Math.sin(time * 0.5) * 2;
+      camera.lookAt(0, 1.5, 0);
+
+      renderer.render(scene, camera);
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        observer.disconnect();
+        animate();
+      }
+    });
+    observer.observe(container);
+
+    const ro = new ResizeObserver(() => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+    ro.observe(container);
+  });
+</script>

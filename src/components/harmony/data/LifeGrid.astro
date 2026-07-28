@@ -1,0 +1,51 @@
+---
+interface Props {
+  columns: string[];
+  rows: string[][];
+  class?: string;
+}
+
+const {
+  columns,
+  rows,
+  class: className = "",
+} = Astro.props;
+---
+
+<div class:list={["life-grid overflow-x-auto", className]}>
+  <table class="w-full border-collapse font-ui text-sm">
+    <thead>
+      <tr>
+        {columns.map((col) => (
+          <th class="text-left px-4 py-2.5 font-display text-[11px] tracking-[0.15em] text-ash-500 uppercase border-b-2 border-rose-300/30 bg-mist-200/40">
+            {col}
+          </th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((row, i) => (
+        <tr class:list={[
+          "life-grid-row transition-colors hover:bg-rose-50/40",
+          i % 2 === 0 ? "bg-mist-50" : "bg-mist-200/30",
+        ]}>
+          {row.map((cell, j) => (
+            <td class:list={[
+              "px-4 py-2 border-b border-mist-400/20",
+              j === 0 ? "font-mono text-xs text-hml-500" : "text-ash-500",
+            ]}>
+              {cell}
+            </td>
+          ))}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .life-grid {
+    border: 1px solid oklch(0.86 0.01 350 / 0.6);
+    box-shadow: 0 1px 3px oklch(0.50 0.02 350 / 0.04);
+  }
+</style>

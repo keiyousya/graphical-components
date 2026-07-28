@@ -1,0 +1,29 @@
+---
+interface Props {
+  tag?: string;
+  emotion?: string;
+  class?: string;
+}
+
+const {
+  tag = "p",
+  emotion,
+  class: className = "",
+} = Astro.props;
+---
+
+<div class:list={["hml-text", className]}>
+  {emotion && (
+    <span class="font-mono text-[10px] text-hml-300 tracking-wider block mb-1">
+      &lt;{emotion}&gt;
+    </span>
+  )}
+  <div class="font-ui text-ash-600 leading-relaxed">
+    <slot />
+  </div>
+  {emotion && (
+    <span class="font-mono text-[10px] text-hml-300/50 tracking-wider block mt-1">
+      &lt;/{emotion}&gt;
+    </span>
+  )}
+</div>

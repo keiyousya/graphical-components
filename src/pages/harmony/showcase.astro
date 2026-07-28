@@ -1,0 +1,353 @@
+---
+import HarmonyLayout from "../../layouts/HarmonyLayout.astro";
+import EtmlPanel from "../../components/harmony/panels/EtmlPanel.astro";
+import MediCard from "../../components/harmony/panels/MediCard.astro";
+import HarmonyGlass from "../../components/harmony/panels/HarmonyGlass.astro";
+import HarmonyButton from "../../components/harmony/controls/HarmonyButton.astro";
+import WillToggle from "../../components/harmony/controls/WillToggle.astro";
+import HarmonySlider from "../../components/harmony/controls/HarmonySlider.astro";
+import EtmlText from "../../components/harmony/typography/EtmlText.astro";
+import HarmonyHeading from "../../components/harmony/typography/HarmonyHeading.astro";
+import DissolveText from "../../components/harmony/typography/DissolveText.astro";
+import LifeSyncMonitor from "../../components/harmony/data/WatchMeMonitor.astro";
+import LifeGrid from "../../components/harmony/data/LifeGrid.astro";
+import VitalArc from "../../components/harmony/data/VitalArc.astro";
+import ConsciousnessOrb from "../../components/harmony/data/ConsciousnessOrb.astro";
+import BioArchViz from "../../components/harmony/data/BioArchViz.astro";
+import VoronoiField from "../../components/harmony/data/VoronoiField.astro";
+import ErythrocyteViz from "../../components/harmony/data/ErythrocyteViz.astro";
+import StatValue from "../../components/harmony/data/StatValue.astro";
+import WillIndicator from "../../components/harmony/feedback/WillIndicator.astro";
+import HarmonyAlert from "../../components/harmony/feedback/HarmonyAlert.astro";
+import HarmonySpinner from "../../components/harmony/feedback/HarmonySpinner.astro";
+import CrossField from "../../components/harmony/decorative/CrossField.astro";
+import TiledWall from "../../components/harmony/decorative/TiledWall.astro";
+import HarmonyNav from "../../components/harmony/navigation/HarmonyNav.astro";
+import SectionHeader from "../../components/harmony/catalog/SectionHeader.astro";
+import DemoBlock from "../../components/harmony/catalog/DemoBlock.astro";
+import { url } from "../../utils/paths";
+---
+
+<HarmonyLayout title="Showcase | Harmony">
+  <div class="relative min-h-dvh harmony-cross-field">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 border-b border-mist-500/30 bg-mist-100/80 backdrop-blur-md px-6 py-3">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <a href={url("/harmony")} class="flex items-center gap-3">
+          <div class="size-2 rounded-full bg-vita-400 animate-harmony-pulse"></div>
+          <span class="font-display text-xs tracking-[0.15em] text-ash-500 uppercase">
+            &lt;harmony/&gt;
+          </span>
+        </a>
+        <nav class="flex items-center gap-4 font-mono text-[10px] text-ash-400">
+          <a href={url("/harmony")} class="hover:text-rose-500 transition-colors">HOME</a>
+          <a href={url("/harmony/showcase")} class="text-rose-500">SHOWCASE</a>
+          <a href={url("/")} class="hover:text-rose-500 transition-colors">THEMES</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-12 space-y-20">
+
+      <!-- ======================== -->
+      <!-- SECTION: 3D / Three.js   -->
+      <!-- ======================== -->
+      <section id="three">
+        <SectionHeader title="3D Components" tag="three" />
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Consciousness Orb -->
+          <DemoBlock title="Consciousness Orb" label="意識スフィア">
+            <ConsciousnessOrb size="lg" class="border border-mist-400/30" />
+          </DemoBlock>
+
+          <!-- Bio Architecture -->
+          <DemoBlock title="Bio Architecture" label="バイオ建築">
+            <BioArchViz size="lg" class="border border-mist-400/30" />
+          </DemoBlock>
+
+          <!-- Erythrocyte -->
+          <DemoBlock title="Erythrocyte" label="赤血球">
+            <ErythrocyteViz size="lg" class="border border-mist-400/30" />
+          </DemoBlock>
+
+          <!-- Voronoi Field -->
+          <DemoBlock title="Voronoi Field" label="ボロノイフィールド" class="lg:col-span-2">
+            <VoronoiField size="lg" class="border border-mist-400/30" />
+          </DemoBlock>
+
+          <!-- LifeSync Monitor -->
+          <DemoBlock title="LifeSync Monitor" label="ウォッチミーモニター" class="lg:col-span-2">
+            <LifeSyncMonitor size="lg" class="border border-mist-400/30" />
+          </DemoBlock>
+        </div>
+      </section>
+
+      <!-- ======================== -->
+      <!-- SECTION: Panels          -->
+      <!-- ======================== -->
+      <section id="panels">
+        <SectionHeader title="Panels" tag="container" />
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <DemoBlock title="HML Panel" label="HMLパネル">
+            <div class="space-y-3">
+              <EtmlPanel tag="body">
+                <p class="font-mono text-xs text-hml-500">&lt;?harmonized-markup ?&gt;</p>
+                <p class="font-ui text-sm text-ash-500 mt-2">LifeSyncシステムは全市民の生体情報をリアルタイムで監視しています。</p>
+              </EtmlPanel>
+            </div>
+          </DemoBlock>
+
+          <DemoBlock title="Medi Card" label="メディカード">
+            <div class="space-y-3">
+              <MediCard title="BIOSYNC STATUS" variant="vita">
+                <p class="font-mono text-xs text-vita-600">All vitals nominal</p>
+              </MediCard>
+              <MediCard title="ADVISORY" variant="caution">
+                <p class="font-mono text-xs text-caution-500">Stress level elevated</p>
+              </MediCard>
+            </div>
+          </DemoBlock>
+
+          <DemoBlock title="Harmony Glass" label="ハーモニーグラス">
+            <div class="space-y-3">
+              <HarmonyGlass variant="default">
+                <p class="font-ui text-sm text-ash-500">Default variant</p>
+              </HarmonyGlass>
+              <HarmonyGlass variant="rose">
+                <p class="font-ui text-sm text-rose-600">Rose variant</p>
+              </HarmonyGlass>
+              <HarmonyGlass variant="will">
+                <p class="font-ui text-sm text-will-600">Will variant</p>
+              </HarmonyGlass>
+            </div>
+          </DemoBlock>
+        </div>
+      </section>
+
+      <!-- ======================== -->
+      <!-- SECTION: Data Display    -->
+      <!-- ======================== -->
+      <section id="data">
+        <SectionHeader title="Data Display" tag="data" />
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Stat Values -->
+          <DemoBlock title="Stat Values" label="統計値">
+            <div class="grid grid-cols-3 gap-6">
+              <StatValue value={7842} label="POPULATION" />
+              <StatValue value={99.7} label="HARMONY INDEX" unit="%" decimals={1} />
+              <StatValue value={24} label="DISSENT" unit=" ms" />
+            </div>
+          </DemoBlock>
+
+          <!-- Vital Arcs -->
+          <DemoBlock title="Vital Arcs" label="バイタルアーク">
+            <div class="flex items-center justify-center gap-6 flex-wrap">
+              <VitalArc value={72} label="HEART" />
+              <VitalArc value={98} label="SpO₂" variant="vita" />
+              <VitalArc value={36} label="TEMP" variant="caution" />
+              <VitalArc value={85} label="STRESS" variant="critical" />
+            </div>
+          </DemoBlock>
+
+          <!-- Life Grid -->
+          <DemoBlock title="Life Grid" label="ライフグリッド" class="lg:col-span-2">
+            <LifeGrid
+              columns={["SUBJECT", "STATUS", "HR", "SpO₂", "WILL"]}
+              rows={[
+                ["SUBJ-001", "ACTIVE", "72 bpm", "98%", "0.92"],
+                ["TUAN-002", "ACTIVE", "68 bpm", "99%", "0.85"],
+                ["CIAN-003", "MONITORED", "78 bpm", "97%", "0.71"],
+                ["SUBJ-004", "ACTIVE", "65 bpm", "98%", "0.94"],
+                ["SUBJ-005", "ADVISORY", "88 bpm", "96%", "0.63"],
+              ]}
+            />
+          </DemoBlock>
+        </div>
+      </section>
+
+      <!-- ======================== -->
+      <!-- SECTION: Controls        -->
+      <!-- ======================== -->
+      <section id="controls">
+        <SectionHeader title="Controls" tag="input" />
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <DemoBlock title="Harmony Buttons" label="ハーモニーボタン">
+            <div class="space-y-4">
+              <div class="flex flex-wrap items-center gap-3">
+                <HarmonyButton>Default</HarmonyButton>
+                <HarmonyButton variant="rose">Rose</HarmonyButton>
+                <HarmonyButton variant="will">Will</HarmonyButton>
+                <HarmonyButton variant="vita">Vita</HarmonyButton>
+              </div>
+              <div class="flex flex-wrap items-center gap-3">
+                <HarmonyButton size="sm">Small</HarmonyButton>
+                <HarmonyButton size="md">Medium</HarmonyButton>
+                <HarmonyButton size="lg">Large</HarmonyButton>
+              </div>
+            </div>
+          </DemoBlock>
+
+          <DemoBlock title="Toggles & Sliders" label="トグル & スライダー">
+            <div class="space-y-5">
+              <div class="flex flex-wrap items-center gap-6">
+                <WillToggle label="WATCHME" checked />
+                <WillToggle label="MEDISYNC" />
+                <WillToggle label="HARMONY" checked />
+              </div>
+              <HarmonySlider label="CONSCIOUSNESS LEVEL" value={85} unit="%" />
+              <HarmonySlider label="PHARMACOLOGICAL" min={0} max={10} value={3} unit=" mg" />
+            </div>
+          </DemoBlock>
+        </div>
+      </section>
+
+      <!-- ======================== -->
+      <!-- SECTION: Navigation      -->
+      <!-- ======================== -->
+      <section id="navigation">
+        <SectionHeader title="Navigation" tag="nav" />
+
+        <DemoBlock title="Harmony Nav" label="ハーモニーナビ">
+          <HarmonyNav
+            items={[
+              { label: "MEDISYNC", href: "#", active: true },
+              { label: "WATCHME", href: "#" },
+              { label: "BIOSYNC", href: "#" },
+              { label: "ARCHIVE", href: "#" },
+              { label: "ADMIN", href: "#" },
+            ]}
+          />
+        </DemoBlock>
+      </section>
+
+      <!-- ======================== -->
+      <!-- SECTION: Feedback        -->
+      <!-- ======================== -->
+      <section id="feedback">
+        <SectionHeader title="Feedback" tag="status" />
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <DemoBlock title="Will Indicators" label="ウィルインジケーター">
+            <div class="flex flex-wrap items-center gap-6">
+              <WillIndicator status="harmony" />
+              <WillIndicator status="caution" />
+              <WillIndicator status="dissonance" />
+              <WillIndicator status="offline" />
+            </div>
+          </DemoBlock>
+
+          <DemoBlock title="Spinners" label="スピナー">
+            <div class="flex items-center justify-center gap-8">
+              <HarmonySpinner size="sm" />
+              <HarmonySpinner size="md" label="SYNCING" />
+              <HarmonySpinner size="lg" label="PROCESSING" />
+            </div>
+          </DemoBlock>
+
+          <DemoBlock title="Alert Banners" label="アラートバナー" class="lg:col-span-2">
+            <div class="space-y-3">
+              <HarmonyAlert variant="info">
+                <strong>INFO:</strong> LifeSync biosync complete. All physiological parameters within normal range.
+              </HarmonyAlert>
+              <HarmonyAlert variant="caution" dismissible>
+                <strong>ADVISORY:</strong> Elevated cortisol detected. Consciousness harmonization recommended.
+              </HarmonyAlert>
+              <HarmonyAlert variant="critical" dismissible>
+                <strong>ALERT:</strong> LifeSync unit malfunction detected in Subject SUBJ-001. Manual intervention required.
+              </HarmonyAlert>
+            </div>
+          </DemoBlock>
+        </div>
+      </section>
+
+      <!-- ======================== -->
+      <!-- SECTION: Typography      -->
+      <!-- ======================== -->
+      <section id="typography">
+        <SectionHeader title="Typography" tag="text" />
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <DemoBlock title="Dissolve Text" label="ディゾルブテキスト">
+            <div class="space-y-4 py-4">
+              <DissolveText text="<harmony/>" tag="h2" class="text-2xl" />
+              <DissolveText text="<!DOCTYPE hml>" tag="h3" class="text-lg" />
+            </div>
+          </DemoBlock>
+
+          <DemoBlock title="HML Text" label="HMLテキスト">
+            <div class="space-y-4 py-4">
+              <EtmlText emotion="desire">
+                わたしたちの社会は、すべての人間が健康で幸福であることを望んでいる。
+              </EtmlText>
+              <EtmlText emotion="fear">
+                しかし、その調和は本当に「わたし」が望んだものなのだろうか。
+              </EtmlText>
+            </div>
+          </DemoBlock>
+
+          <DemoBlock title="Harmony Heading" label="ハーモニー見出し" class="lg:col-span-2">
+            <div class="space-y-6 py-4">
+              <HarmonyHeading tag="h1" class="text-3xl">
+                生命の調和
+              </HarmonyHeading>
+              <HarmonyHeading tag="h2" class="text-xl">
+                LifeSync Medical System
+              </HarmonyHeading>
+            </div>
+          </DemoBlock>
+        </div>
+      </section>
+
+      <!-- ======================== -->
+      <!-- SECTION: Decorative      -->
+      <!-- ======================== -->
+      <section id="decorative">
+        <SectionHeader title="Decorative" tag="env" />
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <DemoBlock title="Cross Field" label="クロスフィールド">
+            <CrossField density="dense" class="h-40 border border-mist-400/30 bg-mist-100">
+              <div class="relative z-10 h-full flex items-center justify-center">
+                <p class="font-display text-sm text-ash-400 tracking-widest uppercase">Cross Field Background</p>
+              </div>
+            </CrossField>
+          </DemoBlock>
+
+          <DemoBlock title="Tiled Wall" label="タイルウォール">
+            <TiledWall density="normal" class="h-40 border border-mist-400/30 bg-mist-100">
+              <div class="h-full flex items-center justify-center">
+                <p class="font-display text-sm text-ash-400 tracking-widest uppercase">Tiled Wall Pattern</p>
+              </div>
+            </TiledWall>
+          </DemoBlock>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-mist-500/20 bg-mist-200/40 px-6 py-4 mt-20">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <span class="font-mono text-[10px] text-ash-300 tracking-widest">
+          &lt;/hml&gt; // SHOWCASE
+        </span>
+        <span class="font-mono text-[10px] text-ash-300">
+          <span class="text-vita-500">&#9679;</span> LifeSync: ACTIVE
+        </span>
+      </div>
+    </footer>
+  </div>
+</HarmonyLayout>
+
+<style>
+  html {
+    scroll-behavior: smooth;
+  }
+  section[id] {
+    scroll-margin-top: 4rem;
+  }
+</style>

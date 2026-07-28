@@ -3,41 +3,41 @@
  * Renders a live demo for a component based on its slug.
  * Each component gets a hand-crafted demo with realistic data.
  */
-import type { ComponentMeta } from "../../data/components";
+import type { ComponentMeta } from "../../../data/components";
 
 // UI components
-import GlassPanel from "../ui/panels/GlassPanel.astro";
-import HoloCard from "../ui/panels/HoloCard.astro";
-import TerminalPanel from "../ui/panels/TerminalPanel.astro";
-import NeonButton from "../ui/controls/NeonButton.astro";
-import HoloToggle from "../ui/controls/HoloToggle.astro";
-import CyberSlider from "../ui/controls/CyberSlider.astro";
-import GlitchText from "../ui/typography/GlitchText.astro";
-import TypeWriter from "../ui/typography/TypeWriter.astro";
-import HoloHeading from "../ui/typography/HoloHeading.astro";
-import StatusIndicator from "../ui/feedback/StatusIndicator.astro";
-import AlertBanner from "../ui/feedback/AlertBanner.astro";
-import LoadingSpinner from "../ui/feedback/LoadingSpinner.astro";
-import HudFrame from "../ui/hud/HudFrame.astro";
-import HudReticle from "../ui/hud/HudReticle.astro";
-import HudCompass from "../ui/hud/HudCompass.astro";
-import StatCounter from "../ui/data/StatCounter.astro";
-import ProgressArc from "../ui/data/ProgressArc.astro";
-import RadarSweep from "../ui/data/RadarSweep.astro";
-import HoloGlobe from "../ui/data/HoloGlobe.astro";
-import HoloObject from "../ui/data/HoloObject.astro";
-import WaveformDisplay from "../ui/data/WaveformDisplay.astro";
-import DataGrid from "../ui/data/DataGrid.astro";
-import HoloRing from "../ui/data/HoloRing.astro";
-import ArcReactor from "../ui/data/ArcReactor.astro";
-import HoloTerrain from "../ui/data/HoloTerrain.astro";
-import WarpTunnel from "../ui/data/WarpTunnel.astro";
-import HudOrbit from "../ui/data/HudOrbit.astro";
-import ParticleField from "../ui/decorative/ParticleField.astro";
-import ScanLine from "../ui/decorative/ScanLine.astro";
-import GridOverlay from "../ui/decorative/GridOverlay.astro";
-import CircuitPattern from "../ui/decorative/CircuitPattern.astro";
-import HudNav from "../ui/navigation/HudNav.astro";
+import GlassPanel from "../panels/GlassPanel.astro";
+import HoloCard from "../panels/HoloCard.astro";
+import TerminalPanel from "../panels/TerminalPanel.astro";
+import NeonButton from "../controls/NeonButton.astro";
+import HoloToggle from "../controls/HoloToggle.astro";
+import CyberSlider from "../controls/CyberSlider.astro";
+import GlitchText from "../typography/GlitchText.astro";
+import TypeWriter from "../typography/TypeWriter.astro";
+import HoloHeading from "../typography/HoloHeading.astro";
+import StatusIndicator from "../feedback/StatusIndicator.astro";
+import AlertBanner from "../feedback/AlertBanner.astro";
+import LoadingSpinner from "../feedback/LoadingSpinner.astro";
+import HudFrame from "../hud/HudFrame.astro";
+import HudReticle from "../hud/HudReticle.astro";
+import HudCompass from "../hud/HudCompass.astro";
+import StatCounter from "../data/StatCounter.astro";
+import ProgressArc from "../data/ProgressArc.astro";
+import RadarSweep from "../data/RadarSweep.astro";
+import HoloGlobe from "../data/HoloGlobe.astro";
+import HoloObject from "../data/HoloObject.astro";
+import WaveformDisplay from "../data/WaveformDisplay.astro";
+import DataGrid from "../data/DataGrid.astro";
+import HoloRing from "../data/HoloRing.astro";
+import ArcReactor from "../data/ArcReactor.astro";
+import HoloTerrain from "../data/HoloTerrain.astro";
+import WarpTunnel from "../data/WarpTunnel.astro";
+import HudOrbit from "../data/HudOrbit.astro";
+import ParticleField from "../decorative/ParticleField.astro";
+import ScanLine from "../decorative/ScanLine.astro";
+import GridOverlay from "../decorative/GridOverlay.astro";
+import CircuitPattern from "../decorative/CircuitPattern.astro";
+import HudNav from "../navigation/HudNav.astro";
 
 interface Props {
   component: ComponentMeta;

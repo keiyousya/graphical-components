@@ -1,0 +1,43 @@
+---
+interface Props {
+  status?: "harmony" | "caution" | "dissonance" | "offline";
+  label?: string;
+  class?: string;
+}
+
+const {
+  status = "harmony",
+  label,
+  class: className = "",
+} = Astro.props;
+
+const statusConfig = {
+  harmony: { color: "bg-vita-400", ring: "ring-vita-400/30", text: "text-vita-600", defaultLabel: "Harmony" },
+  caution: { color: "bg-caution-400", ring: "ring-caution-400/30", text: "text-caution-500", defaultLabel: "Caution" },
+  dissonance: { color: "bg-critical-400", ring: "ring-critical-400/30", text: "text-critical-500", defaultLabel: "Dissonance" },
+  offline: { color: "bg-ash-300", ring: "ring-ash-300/30", text: "text-ash-400", defaultLabel: "Offline" },
+};
+
+const s = statusConfig[status];
+const displayLabel = label ?? s.defaultLabel;
+---
+
+<div class:list={["will-indicator inline-flex items-center gap-2.5", className]}>
+  <div class="relative flex items-center justify-center">
+    <div class:list={[
+      "size-2.5 rounded-full",
+      s.color,
+      status !== "offline" && "animate-harmony-pulse",
+    ]} />
+    {status !== "offline" && (
+      <div class:list={[
+        "absolute size-5 rounded-full ring-2",
+        s.ring,
+        "animate-harmony-breathe",
+      ]} />
+    )}
+  </div>
+  <span class:list={["font-display text-xs tracking-[0.1em] uppercase", s.text]}>
+    {displayLabel}
+  </span>
+</div>

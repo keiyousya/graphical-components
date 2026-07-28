@@ -1,0 +1,259 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg";
+  class?: string;
+}
+
+const {
+  size = "md",
+  class: className = "",
+} = Astro.props;
+
+const sizes = {
+  sm: "h-48",
+  md: "h-64",
+  lg: "h-80",
+};
+---
+
+<div class:list={["consciousness-orb relative bg-mist-100 overflow-hidden", sizes[size], className]}>
+  <canvas class="orb-canvas w-full h-full"></canvas>
+  <div class="absolute bottom-3 left-3 font-mono text-[9px] text-hml-400/50 tracking-wider">
+    &lt;will/&gt;
+  </div>
+</div>
+
+<script>
+  import * as THREE from "three";
+
+  document.querySelectorAll<HTMLDivElement>(".consciousness-orb").forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>(".orb-canvas");
+    if (!canvas) return;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf8f3f4);
+
+    const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+    camera.position.set(0, 0, 4.5);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+    // -------------------------------------------------------
+    // Particle-wire orb: dense cloud of particles in a sphere,
+    // with lines connecting nearby particles.
+    // No solid mesh — just dots and wires forming a dark mass.
+    // -------------------------------------------------------
+
+    const PARTICLE_COUNT = 2000;
+    const OUTER_COUNT = 600;   // sparser outer halo
+    const SPHERE_RADIUS = 1.2;
+    const HALO_RADIUS = 1.8;
+    const CONNECTION_DIST = 0.22;
+    const HALO_CONNECTION_DIST = 0.35;
+
+    const orbGroup = new THREE.Group();
+
+    // --- Generate particles distributed inside a sphere (denser at surface) ---
+    const allPositions: THREE.Vector3[] = [];
+
+    // Core particles: biased toward surface for shell-like density
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      // Bias radius toward surface: r = R * cbrt(random)^0.5 pushes outward
+      const u = Math.random();
+      const r = SPHERE_RADIUS * Math.pow(u, 0.3);
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+
+      allPositions.push(new THREE.Vector3(
+        r * Math.sin(phi) * Math.cos(theta),
+        r * Math.sin(phi) * Math.sin(theta),
+        r * Math.cos(phi),
+      ));
+    }
+
+    // Outer halo: sparse particles that trail outward
+    for (let i = 0; i < OUTER_COUNT; i++) {
+      const r = SPHERE_RADIUS + Math.random() * (HALO_RADIUS - SPHERE_RADIUS);
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+
+      // Cluster them more in certain directions for organic look
+      const stretch = 1.0 + 0.3 * Math.sin(theta * 3) * Math.cos(phi * 2);
+
+      allPositions.push(new THREE.Vector3(
+        r * stretch * Math.sin(phi) * Math.cos(theta),
+        r * Math.sin(phi) * Math.sin(theta),
+        r * stretch * Math.cos(phi),
+      ));
+    }
+
+    const totalCount = allPositions.length;
+
+    // --- Points ---
+    const posArray = new Float32Array(totalCount * 3);
+    // Vary size per particle: core = larger, halo = smaller
+    const sizeArray = new Float32Array(totalCount);
+
+    allPositions.forEach((p, i) => {
+      posArray[i * 3] = p.x;
+      posArray[i * 3 + 1] = p.y;
+      posArray[i * 3 + 2] = p.z;
+      const dist = p.length();
+      // Particles near surface are denser/larger
+      sizeArray[i] = dist < SPHERE_RADIUS
+        ? 0.015 + 0.01 * (dist / SPHERE_RADIUS)
+        : 0.008;
+    });
+
+    const pointGeo = new THREE.BufferGeometry();
+    pointGeo.setAttribute("position", new THREE.BufferAttribute(posArray, 3));
+    pointGeo.setAttribute("size", new THREE.BufferAttribute(sizeArray, 1));
+
+    const pointMat = new THREE.PointsMaterial({
+      color: 0x2a1820,
+      size: 0.02,
+      transparent: true,
+      opacity: 0.7,
+      sizeAttenuation: true,
+    });
+    orbGroup.add(new THREE.Points(pointGeo, pointMat));
+
+    // --- Lines connecting nearby particles ---
+    // Use spatial grid for efficient neighbor search
+    function buildConnections(
+      positions: THREE.Vector3[],
+      maxDist: number,
+      startIdx: number,
+      endIdx: number,
+      maxLines: number
+    ): Float32Array {
+      const lines: number[] = [];
+      const gridSize = maxDist;
+      const grid = new Map<string, number[]>();
+
+      // Build spatial grid
+      for (let i = startIdx; i < endIdx; i++) {
+        const p = positions[i];
+        const gx = Math.floor(p.x / gridSize);
+        const gy = Math.floor(p.y / gridSize);
+        const gz = Math.floor(p.z / gridSize);
+        const key = `${gx},${gy},${gz}`;
+        if (!grid.has(key)) grid.set(key, []);
+        grid.get(key)!.push(i);
+      }
+
+      // Find connections
+      outer:
+      for (let i = startIdx; i < endIdx; i++) {
+        const p = positions[i];
+        const gx = Math.floor(p.x / gridSize);
+        const gy = Math.floor(p.y / gridSize);
+        const gz = Math.floor(p.z / gridSize);
+
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            for (let dz = -1; dz <= 1; dz++) {
+              const key = `${gx + dx},${gy + dy},${gz + dz}`;
+              const cell = grid.get(key);
+              if (!cell) continue;
+
+              for (const j of cell) {
+                if (j <= i) continue;
+                const d = p.distanceTo(positions[j]);
+                if (d < maxDist) {
+                  lines.push(
+                    p.x, p.y, p.z,
+                    positions[j].x, positions[j].y, positions[j].z
+                  );
+                  if (lines.length / 6 >= maxLines) break outer;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      return new Float32Array(lines);
+    }
+
+    // Core connections (dense, dark)
+    const coreLineData = buildConnections(allPositions, CONNECTION_DIST, 0, PARTICLE_COUNT, 8000);
+    const coreLineGeo = new THREE.BufferGeometry();
+    coreLineGeo.setAttribute("position", new THREE.BufferAttribute(coreLineData, 3));
+    const coreLineMat = new THREE.LineBasicMaterial({
+      color: 0x2a1820,
+      transparent: true,
+      opacity: 0.15,
+    });
+    orbGroup.add(new THREE.LineSegments(coreLineGeo, coreLineMat));
+
+    // Halo connections (sparser, lighter)
+    const haloLineData = buildConnections(allPositions, HALO_CONNECTION_DIST, PARTICLE_COUNT, totalCount, 2000);
+    const haloLineGeo = new THREE.BufferGeometry();
+    haloLineGeo.setAttribute("position", new THREE.BufferAttribute(haloLineData, 3));
+    const haloLineMat = new THREE.LineBasicMaterial({
+      color: 0x4a3040,
+      transparent: true,
+      opacity: 0.08,
+    });
+    orbGroup.add(new THREE.LineSegments(haloLineGeo, haloLineMat));
+
+    scene.add(orbGroup);
+
+    // Cross markers in background
+    const crossMat = new THREE.LineBasicMaterial({ color: 0xc0b0b5, transparent: true, opacity: 0.35 });
+    for (let i = 0; i < 12; i++) {
+      const x = (Math.random() - 0.5) * 7;
+      const y = (Math.random() - 0.5) * 4;
+      const z = -1 - Math.random() * 2;
+      const s = 0.05;
+      scene.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x - s, y, z), new THREE.Vector3(x + s, y, z)]),
+        crossMat
+      ));
+      scene.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x, y - s, z), new THREE.Vector3(x, y + s, z)]),
+        crossMat
+      ));
+    }
+
+    let time = 0;
+
+    // Store original positions for animation
+    const originalPos = new Float32Array(posArray);
+
+    function animate() {
+      requestAnimationFrame(animate);
+      time += 0.006;
+
+      // Slow rotation
+      orbGroup.rotation.y = time * 0.15;
+      orbGroup.rotation.x = Math.sin(time * 0.1) * 0.05;
+
+      // Subtle organic breathing: scale particles slightly
+      const breathe = 1.0 + Math.sin(time * 0.8) * 0.015;
+      orbGroup.scale.setScalar(breathe);
+
+      renderer.render(scene, camera);
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        observer.disconnect();
+        animate();
+      }
+    });
+    observer.observe(container);
+
+    const ro = new ResizeObserver(() => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+    ro.observe(container);
+  });
+</script>

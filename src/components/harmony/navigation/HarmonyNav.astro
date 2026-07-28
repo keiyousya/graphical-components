@@ -1,0 +1,26 @@
+---
+interface Props {
+  items: Array<{ label: string; href: string; active?: boolean }>;
+  class?: string;
+}
+
+const { items, class: className = "" } = Astro.props;
+---
+
+<nav class:list={["harmony-nav", className]}>
+  <div class="flex items-center gap-0.5 border border-mist-500/60 bg-mist-50/80 p-1">
+    {items.map((item) => (
+      <a
+        href={item.href}
+        class:list={[
+          "px-4 py-1.5 font-display text-xs tracking-[0.1em] uppercase transition-all duration-200",
+          item.active
+            ? "bg-rose-100/60 text-rose-700 border border-rose-300/40"
+            : "text-ash-400 hover:text-ash-700 hover:bg-mist-300/40 border border-transparent",
+        ]}
+      >
+        {item.label}
+      </a>
+    ))}
+  </div>
+</nav>

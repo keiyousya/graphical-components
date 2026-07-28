@@ -1,0 +1,207 @@
+@import "tailwindcss";
+@import "./harmony-effects.css";
+
+/* ============================================
+   HARMONY DESIGN TOKENS
+   — 白基調の近未来ディストピア
+   — 白基調の近未来ディストピア
+   ============================================ */
+@theme {
+  /* --- Primary: Rose (有機建築 / バイオアーキテクチャ) --- */
+  --color-rose-50: oklch(0.97 0.008 10);
+  --color-rose-100: oklch(0.93 0.02 10);
+  --color-rose-200: oklch(0.85 0.05 8);
+  --color-rose-300: oklch(0.75 0.09 5);
+  --color-rose-400: oklch(0.65 0.12 3);
+  --color-rose-500: oklch(0.58 0.14 0);
+  --color-rose-600: oklch(0.50 0.12 358);
+  --color-rose-700: oklch(0.42 0.10 355);
+  --color-rose-800: oklch(0.34 0.08 352);
+  --color-rose-900: oklch(0.26 0.06 350);
+
+  /* --- Secondary: Will (意識 / 紫) --- */
+  --color-will-50: oklch(0.96 0.01 310);
+  --color-will-100: oklch(0.90 0.03 310);
+  --color-will-200: oklch(0.82 0.06 315);
+  --color-will-300: oklch(0.70 0.10 320);
+  --color-will-400: oklch(0.60 0.14 320);
+  --color-will-500: oklch(0.50 0.16 325);
+  --color-will-600: oklch(0.42 0.14 325);
+  --color-will-700: oklch(0.34 0.11 325);
+  --color-will-800: oklch(0.26 0.08 325);
+  --color-will-900: oklch(0.18 0.05 325);
+
+  /* --- hml: Crimson-brown (マークアップ / テキスト) --- */
+  --color-hml-50: oklch(0.95 0.01 20);
+  --color-hml-100: oklch(0.88 0.03 15);
+  --color-hml-200: oklch(0.78 0.06 12);
+  --color-hml-300: oklch(0.65 0.08 10);
+  --color-hml-400: oklch(0.52 0.10 8);
+  --color-hml-500: oklch(0.42 0.10 5);
+  --color-hml-600: oklch(0.35 0.08 3);
+  --color-hml-700: oklch(0.28 0.06 0);
+  --color-hml-800: oklch(0.22 0.04 358);
+  --color-hml-900: oklch(0.16 0.03 355);
+
+  /* --- Mist: White base (白基調 / 背景) --- */
+  --color-mist-50: oklch(0.995 0.001 0);
+  --color-mist-100: oklch(0.98 0.002 350);
+  --color-mist-200: oklch(0.96 0.004 350);
+  --color-mist-300: oklch(0.93 0.006 350);
+  --color-mist-400: oklch(0.90 0.008 350);
+  --color-mist-500: oklch(0.86 0.010 350);
+  --color-mist-600: oklch(0.80 0.012 350);
+  --color-mist-700: oklch(0.72 0.010 350);
+  --color-mist-800: oklch(0.60 0.008 350);
+  --color-mist-900: oklch(0.45 0.006 350);
+
+  /* --- Ash: Dark tones (テキスト) --- */
+  --color-ash-50: oklch(0.90 0.005 350);
+  --color-ash-100: oklch(0.80 0.008 350);
+  --color-ash-200: oklch(0.70 0.010 350);
+  --color-ash-300: oklch(0.58 0.008 350);
+  --color-ash-400: oklch(0.48 0.006 350);
+  --color-ash-500: oklch(0.38 0.005 350);
+  --color-ash-600: oklch(0.30 0.005 350);
+  --color-ash-700: oklch(0.24 0.004 350);
+  --color-ash-800: oklch(0.18 0.003 350);
+  --color-ash-900: oklch(0.12 0.002 350);
+
+  /* --- Status Colors --- */
+  --color-vita-300: oklch(0.75 0.12 155);
+  --color-vita-400: oklch(0.68 0.14 155);
+  --color-vita-500: oklch(0.60 0.16 155);
+  --color-vita-600: oklch(0.50 0.14 155);
+
+  --color-caution-300: oklch(0.78 0.12 75);
+  --color-caution-400: oklch(0.70 0.14 70);
+  --color-caution-500: oklch(0.62 0.16 65);
+
+  --color-critical-300: oklch(0.70 0.16 25);
+  --color-critical-400: oklch(0.60 0.18 22);
+  --color-critical-500: oklch(0.50 0.20 20);
+
+  /* --- Fonts --- */
+  --font-display: "Rajdhani", "Exo 2", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  --font-ui: "Rajdhani", ui-sans-serif, system-ui, sans-serif;
+
+  /* --- Subtle shadows --- */
+  --shadow-soft-sm: 0 1px 3px oklch(0.50 0.02 350 / 0.08),
+    0 1px 2px oklch(0.50 0.02 350 / 0.04);
+  --shadow-soft-md: 0 4px 12px oklch(0.50 0.02 350 / 0.08),
+    0 2px 4px oklch(0.50 0.02 350 / 0.04);
+  --shadow-soft-lg: 0 8px 24px oklch(0.50 0.02 350 / 0.10),
+    0 4px 8px oklch(0.50 0.02 350 / 0.05);
+  --shadow-rose: 0 0 12px oklch(0.58 0.14 0 / 0.15),
+    0 0 24px oklch(0.58 0.14 0 / 0.08);
+  --shadow-will: 0 0 12px oklch(0.50 0.16 325 / 0.15),
+    0 0 24px oklch(0.50 0.16 325 / 0.08);
+
+  /* --- Animations --- */
+  --animate-harmony-breathe: harmony-breathe 6s ease-in-out infinite;
+  --animate-harmony-fade-in: harmony-fade-in 0.8s ease-out;
+  --animate-harmony-pulse: harmony-pulse 3s ease-in-out infinite;
+  --animate-harmony-float: harmony-float 8s ease-in-out infinite;
+  --animate-harmony-scan: harmony-scan 6s linear infinite;
+  --animate-harmony-dissolve: harmony-dissolve 4s ease-in-out infinite;
+
+  @keyframes harmony-breathe {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+  }
+
+  @keyframes harmony-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes harmony-pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(1.02);
+    }
+  }
+
+  @keyframes harmony-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  @keyframes harmony-scan {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+  }
+
+  @keyframes harmony-dissolve {
+    0%, 100% { opacity: 0.3; filter: blur(0px); }
+    50% { opacity: 0.6; filter: blur(1px); }
+  }
+}
+
+/* ============================================
+   BASE STYLES — HARMONY THEME
+   ============================================ */
+@layer base {
+  html {
+    background-color: var(--color-mist-100);
+    color: var(--color-ash-600);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    min-height: 100dvh;
+  }
+
+  ::selection {
+    background-color: oklch(0.58 0.14 0 / 0.15);
+    color: var(--color-ash-800);
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-mist-300);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-rose-300);
+    border-radius: 2px;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    color: var(--color-ash-700);
+    letter-spacing: 0.04em;
+  }
+
+  code, pre {
+    font-family: var(--font-mono);
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

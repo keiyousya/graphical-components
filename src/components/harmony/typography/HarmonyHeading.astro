@@ -1,0 +1,21 @@
+---
+interface Props {
+  tag?: "h1" | "h2" | "h3";
+  class?: string;
+}
+
+const {
+  tag: Tag = "h2",
+  class: className = "",
+} = Astro.props;
+---
+
+<div class:list={["harmony-heading", className]}>
+  <Tag class="font-display text-ash-700 tracking-[0.06em]">
+    <slot />
+  </Tag>
+  <div class="mt-2 flex items-center gap-2">
+    <div class="h-px flex-1 bg-gradient-to-r from-rose-300/60 via-rose-200/30 to-transparent"></div>
+    <span class="text-[6px] text-rose-400 select-none">+</span>
+  </div>
+</div>

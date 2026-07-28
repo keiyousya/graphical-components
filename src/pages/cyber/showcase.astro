@@ -27,6 +27,7 @@ import ArcReactor from "../../components/cyber/data/ArcReactor.astro";
 import HoloTerrain from "../../components/cyber/data/HoloTerrain.astro";
 import WarpTunnel from "../../components/cyber/data/WarpTunnel.astro";
 import HudOrbit from "../../components/cyber/data/HudOrbit.astro";
+import HoloWindow from "../../components/cyber/data/HoloWindow.astro";
 import ParticleField from "../../components/cyber/decorative/ParticleField.astro";
 import CircuitPattern from "../../components/cyber/decorative/CircuitPattern.astro";
 import HudNav from "../../components/cyber/navigation/HudNav.astro";
@@ -117,6 +118,11 @@ import { url } from "../../utils/paths";
             <div class="flex items-center justify-center h-72 border border-cyber-800/20 bg-void-600/30">
               <HudOrbit size="lg" />
             </div>
+          </DemoBlock>
+
+          <!-- Holo Window -->
+          <DemoBlock title="Holo Window" label="ホロウィンドウ" class="lg:col-span-2">
+            <HoloWindow size="lg" class="border border-cyber-800/20 bg-void-600/30" />
           </DemoBlock>
 
           <!-- Holo Terrain -->

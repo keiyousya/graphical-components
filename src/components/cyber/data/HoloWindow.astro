@@ -1,0 +1,702 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg";
+  color?: string;
+  class?: string;
+}
+
+const {
+  size = "md",
+  color = "#00d4e5",
+  class: className = "",
+} = Astro.props;
+
+const sizes = {
+  sm: "h-64",
+  md: "h-96",
+  lg: "h-[32rem]",
+};
+---
+
+<div
+  class:list={["holo-window relative w-full", sizes[size], className]}
+  data-color={color}
+>
+  <canvas class="holo-window-canvas absolute inset-0 w-full h-full"></canvas>
+</div>
+
+<script>
+  import * as THREE from "three";
+
+  document.querySelectorAll<HTMLElement>(".holo-window").forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>(".holo-window-canvas");
+    if (!canvas) return;
+
+    const color = container.dataset.color || "#00d4e5";
+    const C = new THREE.Color(color);
+    const C_dim = C.clone().multiplyScalar(0.4);
+    const C_bright = C.clone().multiplyScalar(2.0);
+    const C_white = C.clone().lerp(new THREE.Color(0xffffff), 0.6);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(48, 2, 0.1, 100);
+    camera.position.set(0, 0, 6.5);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // ── Helpers ──────────────────────────────────────────────
+    function line(pts: [number, number, number][], col: THREE.Color, opacity: number, parent: THREE.Object3D) {
+      const geo = new THREE.BufferGeometry().setFromPoints(pts.map(p => new THREE.Vector3(...p)));
+      parent.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ color: col, transparent: true, opacity })));
+    }
+
+    function dots(positions: number[], col: THREE.Color, size: number, opacity: number, parent: THREE.Object3D) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      parent.add(new THREE.Points(geo, new THREE.PointsMaterial({
+        color: col, size, transparent: true, opacity,
+        blending: THREE.AdditiveBlending, sizeAttenuation: true, depthWrite: false,
+      })));
+    }
+
+    function rect(x: number, y: number, w: number, h: number, z: number, col: THREE.Color, opacity: number, parent: THREE.Object3D) {
+      line([[x,y,z],[x+w,y,z],[x+w,y+h,z],[x,y+h,z],[x,y,z]], col, opacity, parent);
+    }
+
+    function fillRect(x: number, y: number, w: number, h: number, z: number, col: THREE.Color, opacity: number, parent: THREE.Object3D) {
+      const geo = new THREE.PlaneGeometry(w, h);
+      const mat = new THREE.MeshBasicMaterial({
+        color: col, transparent: true, opacity,
+        blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false,
+      });
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(x + w / 2, y + h / 2, z);
+      parent.add(m);
+      return m;
+    }
+
+    function circle(cx: number, cy: number, r: number, z: number, segs: number, col: THREE.Color, opacity: number, parent: THREE.Object3D, startA = 0, endA = Math.PI * 2) {
+      const pts: [number, number, number][] = [];
+      for (let i = 0; i <= segs; i++) {
+        const a = startA + (i / segs) * (endA - startA);
+        pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r, z]);
+      }
+      line(pts, col, opacity, parent);
+    }
+
+    // ── Glass shader ────────────────────────────────────────
+    const glassVS = `
+      varying vec2 vUv;
+      void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }
+    `;
+    const glassFS = `
+      uniform vec3 uColor;
+      uniform float uTime;
+      varying vec2 vUv;
+      void main() {
+        float edgeX = smoothstep(0.0, 0.08, vUv.x) * smoothstep(1.0, 0.92, vUv.x);
+        float edgeY = smoothstep(0.0, 0.08, vUv.y) * smoothstep(1.0, 0.92, vUv.y);
+        float edge = 1.0 - edgeX * edgeY;
+        float scan = sin(vUv.y * 200.0 + uTime * 3.0) * 0.015 + 0.985;
+        float band = smoothstep(0.0, 0.03, abs(vUv.y - fract(uTime * 0.12))) * 0.6 + 0.4;
+        float alpha = mix(0.08, 0.28, edge) * scan * band;
+        vec3 col = mix(uColor, uColor * 2.0, edge * 0.4);
+        gl_FragColor = vec4(col, alpha);
+      }
+    `;
+
+    // ── Animatable state ────────────────────────────────────
+    const waveLines: { line: THREE.Line; yOff: number; amp: number; seed: number }[] = [];
+    const sweepArcs: { line: THREE.Line; cx: number; cy: number; r: number; span: number }[] = [];
+    const barSets: { meshes: THREE.Mesh[]; topLines: THREE.Line[]; targets: number[]; baseY: number; barW: number }[] = [];
+    const glassMats: THREE.ShaderMaterial[] = [];
+
+    // ── Create cyber frame border ───────────────────────────
+    function cyberFrame(g: THREE.Object3D, w: number, h: number) {
+      const hw = w / 2, hh = h / 2;
+      const notch = 0.15; // corner cut size
+      const z = 0.001;
+
+      // Outer frame with cut corners
+      const framePts: [number,number,number][] = [
+        [-hw + notch, -hh, z], [hw - notch, -hh, z], [hw, -hh + notch, z],
+        [hw, hh - notch, z], [hw - notch, hh, z], [-hw + notch, hh, z],
+        [-hw, hh - notch, z], [-hw, -hh + notch, z], [-hw + notch, -hh, z],
+      ];
+      line(framePts, C_bright, 0.9, g);
+
+      // Second inner frame (offset inward)
+      const d = 0.04;
+      const framePts2: [number,number,number][] = [
+        [-hw+notch+d, -hh+d, z], [hw-notch-d, -hh+d, z], [hw-d, -hh+notch+d, z],
+        [hw-d, hh-notch-d, z], [hw-notch-d, hh-d, z], [-hw+notch+d, hh-d, z],
+        [-hw+d, hh-notch-d, z], [-hw+d, -hh+notch+d, z], [-hw+notch+d, -hh+d, z],
+      ];
+      line(framePts2, C, 0.35, g);
+
+      // Corner accent dots
+      const cornerDots: number[] = [];
+      [[-hw+notch,-hh], [hw-notch,-hh], [hw,-hh+notch], [hw,hh-notch],
+       [hw-notch,hh], [-hw+notch,hh], [-hw,hh-notch], [-hw,-hh+notch]].forEach(([x,y]) => {
+        cornerDots.push(x, y, z + 0.001);
+      });
+      dots(cornerDots, C_white, 0.05, 1.0, g);
+
+      // Corner accent lines (thicker L-shapes at cut corners)
+      const cl = 0.1;
+      [
+        [[-hw+notch,-hh], [-hw,-hh+notch]],
+        [[hw-notch,-hh], [hw,-hh+notch]],
+        [[hw,hh-notch], [hw-notch,hh]],
+        [[-hw,hh-notch], [-hw+notch,hh]],
+      ].forEach(([[x1,y1],[x2,y2]]) => {
+        // Small line extending from corner
+        const dx = x2 - x1, dy = y2 - y1;
+        const len = Math.sqrt(dx*dx + dy*dy);
+        line([[x1,y1,z+0.002], [x1+dx/len*cl, y1+dy/len*cl, z+0.002]], C_white, 1.0, g);
+        line([[x2,y2,z+0.002], [x2-dx/len*cl, y2-dy/len*cl, z+0.002]], C_white, 1.0, g);
+      });
+
+      // Top header bar
+      const headerY = hh - 0.18;
+      line([[-hw * 0.95, headerY, z+0.002], [hw * 0.95, headerY, z+0.002]], C, 0.5, g);
+      fillRect(-hw * 0.95, headerY, w * 0.25, 0.13, z, C, 0.08, g);
+
+      // Status dots in header
+      const sd: number[] = [];
+      for (let i = 0; i < 4; i++) sd.push(hw * 0.9 - i * 0.07, headerY + 0.065, z + 0.003);
+      dots(sd, C_bright, 0.035, 0.9, g);
+
+      // Bottom status bar
+      const footY = -hh + 0.06;
+      line([[-hw * 0.95, footY, z+0.002], [hw * 0.95, footY, z+0.002]], C_dim, 0.3, g);
+      // Small decorative ticks on bottom
+      for (let i = 0; i < 20; i++) {
+        const tx = -hw * 0.9 + (i / 19) * w * 0.9;
+        line([[tx, footY - 0.02, z+0.002], [tx, footY + 0.02, z+0.002]], C_dim, 0.2, g);
+      }
+    }
+
+    // ── Dashboard content: Circular HUD gauge ───────────────
+    function addGauge(g: THREE.Object3D, cx: number, cy: number, r: number) {
+      const z = 0.003;
+      // Multi-ring
+      circle(cx, cy, r, z, 64, C_bright, 0.7, g);
+      circle(cx, cy, r * 0.78, z, 64, C, 0.35, g);
+      circle(cx, cy, r * 0.55, z, 48, C_dim, 0.25, g);
+      circle(cx, cy, r * 0.2, z, 24, C, 0.4, g);
+
+      // Filled center
+      const cGeo = new THREE.CircleGeometry(r * 0.18, 24);
+      const cMat = new THREE.MeshBasicMaterial({ color: C, transparent: true, opacity: 0.1, blending: THREE.AdditiveBlending, depthWrite: false });
+      const cMesh = new THREE.Mesh(cGeo, cMat);
+      cMesh.position.set(cx, cy, z);
+      g.add(cMesh);
+
+      // Tick marks (36 outer + 12 major)
+      for (let i = 0; i < 36; i++) {
+        const a = (i / 36) * Math.PI * 2;
+        const major = i % 3 === 0;
+        const inner = r * (major ? 0.82 : 0.9);
+        line([
+          [cx + Math.cos(a) * inner, cy + Math.sin(a) * inner, z],
+          [cx + Math.cos(a) * r * 0.98, cy + Math.sin(a) * r * 0.98, z],
+        ], major ? C_bright : C_dim, major ? 0.8 : 0.3, g);
+      }
+
+      // Inner tick marks
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        line([
+          [cx + Math.cos(a) * r * 0.58, cy + Math.sin(a) * r * 0.58, z],
+          [cx + Math.cos(a) * r * 0.72, cy + Math.sin(a) * r * 0.72, z],
+        ], C, 0.3, g);
+      }
+
+      // Dashed arc segments
+      for (let s = 0; s < 3; s++) {
+        const startA = s * Math.PI * 0.7 + 0.3;
+        circle(cx, cy, r * (0.65 + s * 0.05), z + 0.001, 16, C, 0.25 + s * 0.05, g, startA, startA + Math.PI * 0.4);
+      }
+
+      // Animated sweep arc
+      const arcPts: THREE.Vector3[] = [];
+      for (let i = 0; i <= 24; i++) {
+        const a = (i / 24) * Math.PI * 0.5;
+        arcPts.push(new THREE.Vector3(cx + Math.cos(a) * r * 0.85, cy + Math.sin(a) * r * 0.85, z + 0.002));
+      }
+      const arcGeo = new THREE.BufferGeometry().setFromPoints(arcPts);
+      const arcLine = new THREE.Line(arcGeo, new THREE.LineBasicMaterial({ color: C_white, transparent: true, opacity: 0.9 }));
+      g.add(arcLine);
+      sweepArcs.push({ line: arcLine, cx, cy, r: r * 0.85, span: Math.PI * 0.5 });
+
+      // Cross hairs
+      line([[cx - r * 0.12, cy, z], [cx + r * 0.12, cy, z]], C, 0.5, g);
+      line([[cx, cy - r * 0.12, z], [cx, cy + r * 0.12, z]], C, 0.5, g);
+
+      // Data points scattered
+      const dp: number[] = [];
+      for (let i = 0; i < 12; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const d = r * (0.25 + Math.random() * 0.6);
+        dp.push(cx + Math.cos(a) * d, cy + Math.sin(a) * d, z + 0.002);
+      }
+      dots(dp, C_bright, 0.035, 0.7, g);
+
+      // Center dot
+      dots([cx, cy, z + 0.003], C_white, 0.07, 1.0, g);
+    }
+
+    // ── Dashboard content: Waveform ─────────────────────────
+    function addWave(g: THREE.Object3D, x: number, y: number, w: number, h: number, seed: number) {
+      const z = 0.003;
+      // Background box
+      rect(x, y, w, h, z - 0.001, C_dim, 0.2, g);
+      fillRect(x, y, w, h, z - 0.002, C, 0.03, g);
+
+      // Grid lines
+      for (let i = 1; i < 4; i++) {
+        const gy = y + (i / 4) * h;
+        line([[x, gy, z - 0.001], [x + w, gy, z - 0.001]], C_dim, 0.1, g);
+      }
+      for (let i = 1; i < 6; i++) {
+        const gx = x + (i / 6) * w;
+        line([[gx, y, z - 0.001], [gx, y + h, z - 0.001]], C_dim, 0.1, g);
+      }
+
+      // Waveform line
+      const segs = 80;
+      const pts: THREE.Vector3[] = [];
+      for (let i = 0; i <= segs; i++) {
+        const t = i / segs;
+        const px = x + t * w;
+        const py = y + h / 2 + Math.sin(t * Math.PI * 5 + seed) * h * 0.3
+          + Math.sin(t * Math.PI * 9 + seed * 2) * h * 0.12;
+        pts.push(new THREE.Vector3(px, py, z));
+      }
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      const waveLine = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: C_bright, transparent: true, opacity: 0.85 }));
+      g.add(waveLine);
+      waveLines.push({ line: waveLine, yOff: y + h / 2, amp: h * 0.3, seed });
+
+      // Fill under waveform
+      const fillPts: number[] = [];
+      for (let i = 0; i < segs; i++) {
+        const p0 = pts[i], p1 = pts[i + 1];
+        fillPts.push(p0.x, p0.y, z - 0.001, p1.x, p1.y, z - 0.001, p0.x, y, z - 0.001);
+        fillPts.push(p1.x, p1.y, z - 0.001, p1.x, y, z - 0.001, p0.x, y, z - 0.001);
+      }
+      const fillGeo = new THREE.BufferGeometry();
+      fillGeo.setAttribute("position", new THREE.Float32BufferAttribute(fillPts, 3));
+      g.add(new THREE.Mesh(fillGeo, new THREE.MeshBasicMaterial({
+        color: C, transparent: true, opacity: 0.06,
+        blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false,
+      })));
+    }
+
+    // ── Dashboard content: Bar chart ────────────────────────
+    function addBars(g: THREE.Object3D, x: number, y: number, w: number, h: number, count: number) {
+      const z = 0.003;
+      rect(x, y, w, h, z - 0.001, C_dim, 0.2, g);
+      fillRect(x, y, w, h, z - 0.002, C, 0.02, g);
+
+      // Grid
+      for (let i = 1; i <= 4; i++) {
+        const gy = y + (i / 5) * h;
+        line([[x, gy, z-0.001], [x+w, gy, z-0.001]], C_dim, 0.08, g);
+      }
+
+      const gap = w * 0.02;
+      const barW = (w - gap * (count + 1)) / count;
+      const meshes: THREE.Mesh[] = [];
+      const topLines: THREE.Line[] = [];
+      const targets: number[] = [];
+
+      for (let i = 0; i < count; i++) {
+        const bx = x + gap + i * (barW + gap);
+        const bh = (0.2 + Math.random() * 0.7) * h;
+        targets.push(bh);
+
+        // Bar fill
+        const barMesh = fillRect(bx, y + gap, barW, 0.01, z, C, 0.3, g);
+        meshes.push(barMesh);
+
+        // Bar top glow
+        const tPts = [new THREE.Vector3(bx, y + gap, z + 0.001), new THREE.Vector3(bx + barW, y + gap, z + 0.001)];
+        const tGeo = new THREE.BufferGeometry().setFromPoints(tPts);
+        const tLine = new THREE.Line(tGeo, new THREE.LineBasicMaterial({ color: C_white, transparent: true, opacity: 0.9 }));
+        g.add(tLine);
+        topLines.push(tLine);
+      }
+
+      barSets.push({ meshes, topLines, targets, baseY: y + gap, barW });
+    }
+
+    // ── Dashboard content: Progress bars ────────────────────
+    function addProgressBars(g: THREE.Object3D, x: number, y: number, w: number, count: number) {
+      const z = 0.003;
+      const barH = 0.045;
+      const spacing = 0.09;
+      for (let i = 0; i < count; i++) {
+        const by = y - i * spacing;
+        const progress = 0.3 + Math.random() * 0.6;
+        // Track
+        rect(x, by, w, barH, z, C_dim, 0.25, g);
+        // Fill
+        fillRect(x, by, w * progress, barH, z + 0.001, C, 0.2, g);
+        // Bright end
+        line([[x + w * progress, by, z + 0.002], [x + w * progress, by + barH, z + 0.002]], C_white, 0.8, g);
+        // Dot at end
+        dots([x + w * progress, by + barH / 2, z + 0.003], C_white, 0.035, 0.9, g);
+      }
+    }
+
+    // ── Dashboard content: Mini hex grid ────────────────────
+    function addMiniHex(g: THREE.Object3D, ox: number, oy: number, cols: number, rows: number, hexR: number) {
+      const z = 0.003;
+      const hexH = hexR * Math.sqrt(3);
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cx = ox + c * hexR * 1.6;
+          const cy = oy + r * hexH * 0.95 + (c % 2 === 0 ? 0 : hexH * 0.475);
+          const active = Math.random() > 0.4;
+          const pts: [number,number,number][] = [];
+          for (let i = 0; i <= 6; i++) {
+            const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
+            pts.push([cx + Math.cos(a) * hexR * 0.88, cy + Math.sin(a) * hexR * 0.88, z]);
+          }
+          line(pts, active ? C : C_dim, active ? 0.45 : 0.12, g);
+          if (active && Math.random() > 0.5) {
+            const fGeo = new THREE.CircleGeometry(hexR * 0.65, 6);
+            const fMat = new THREE.MeshBasicMaterial({ color: C, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, depthWrite: false });
+            const fM = new THREE.Mesh(fGeo, fMat);
+            fM.position.set(cx, cy, z - 0.001);
+            fM.rotation.z = Math.PI / 6;
+            g.add(fM);
+          }
+        }
+      }
+    }
+
+    // ── Dashboard content: Data matrix dots ─────────────────
+    function addDataDots(g: THREE.Object3D, x: number, y: number, w: number, h: number, rows: number, cols: number) {
+      const z = 0.003;
+      rect(x, y, w, h, z - 0.001, C_dim, 0.15, g);
+      const dp: number[] = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const px = x + (c + 0.5) / cols * w;
+          const py = y + (r + 0.5) / rows * h;
+          if (Math.random() > 0.25) {
+            dp.push(px, py, z + 0.001);
+          }
+        }
+      }
+      dots(dp, Math.random() > 0.5 ? C_bright : C, 0.025, 0.6, g);
+    }
+
+    // ── Dashboard content: Stacked mini rectangles ──────────
+    function addStackedRects(g: THREE.Object3D, x: number, y: number, w: number, count: number) {
+      const z = 0.003;
+      const rh = 0.06;
+      const spacing = 0.085;
+      for (let i = 0; i < count; i++) {
+        const ry = y - i * spacing;
+        const rw = w * (0.4 + Math.random() * 0.6);
+        rect(x, ry, rw, rh, z, C_dim, 0.3, g);
+        fillRect(x, ry, rw, rh, z - 0.001, C, 0.06, g);
+        // Right side small indicator
+        dots([x + rw + 0.04, ry + rh / 2, z + 0.001], Math.random() > 0.5 ? C_bright : C_dim, 0.025, 0.7, g);
+      }
+    }
+
+    // ── Dashboard content: Circular progress arcs ───────────
+    function addProgressArcs(g: THREE.Object3D, cx: number, cy: number, r: number, count: number) {
+      const z = 0.003;
+      for (let i = 0; i < count; i++) {
+        const ri = r - i * 0.065;
+        const progress = 0.3 + Math.random() * 0.65;
+        // Track
+        circle(cx, cy, ri, z, 48, C_dim, 0.15, g);
+        // Progress
+        circle(cx, cy, ri, z + 0.001, Math.floor(48 * progress),
+          i === 0 ? C_bright : C,
+          0.6 - i * 0.08, g,
+          -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
+        // End dot
+        const endA = -Math.PI / 2 + Math.PI * 2 * progress;
+        dots([cx + Math.cos(endA) * ri, cy + Math.sin(endA) * ri, z + 0.002], C_white, 0.035, 0.9, g);
+      }
+    }
+
+    // ── Dashboard content: Vertical level indicator ─────────
+    function addLevelBars(g: THREE.Object3D, x: number, y: number, h: number, count: number, spacing: number) {
+      const z = 0.003;
+      const segments = 12;
+      const segH = h / segments;
+      const barW = 0.04;
+      for (let b = 0; b < count; b++) {
+        const bx = x + b * spacing;
+        const level = Math.floor(3 + Math.random() * (segments - 3));
+        for (let s = 0; s < segments; s++) {
+          const sy = y + s * segH;
+          const active = s < level;
+          rect(bx, sy, barW, segH * 0.8, z, active ? C : C_dim, active ? 0.5 : 0.1, g);
+          if (active) {
+            fillRect(bx, sy, barW, segH * 0.8, z - 0.001, C, 0.12, g);
+          }
+        }
+      }
+    }
+
+    // ============================================================
+    // CREATE PANELS
+    // ============================================================
+
+    function createPanel(w: number, h: number, pos: THREE.Vector3, rot: THREE.Euler,
+      contentFn: (g: THREE.Group, w: number, h: number) => void) {
+      const g = new THREE.Group();
+      g.position.copy(pos);
+      g.rotation.copy(rot);
+
+      // Glass background
+      const glassMat = new THREE.ShaderMaterial({
+        vertexShader: glassVS, fragmentShader: glassFS,
+        uniforms: { uColor: { value: C.clone() }, uTime: { value: 0 } },
+        transparent: true, side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      });
+      glassMats.push(glassMat);
+      const glassGeo = new THREE.PlaneGeometry(w, h);
+      g.add(new THREE.Mesh(glassGeo, glassMat));
+
+      // Cyber frame
+      cyberFrame(g, w, h);
+
+      // Content
+      contentFn(g, w, h);
+
+      scene.add(g);
+      return g;
+    }
+
+    // ── PANEL 1 (Left): Main dashboard ──────────────────────
+    const pw = 3.8, ph = 2.8;
+    const p1 = createPanel(pw, ph,
+      new THREE.Vector3(-2.1, 0, 0),
+      new THREE.Euler(0, 0.18, 0),
+      (g, w, h) => {
+        const hw = w / 2, hh = h / 2;
+        const z = 0.003;
+
+        // ─ Top section: Circular gauge (left) + Waveforms (right) ─
+        addGauge(g, -hw * 0.55, hh * 0.3, 0.45);
+
+        // Two stacked waveforms on the right
+        addWave(g, -hw * 0.05, hh * 0.42, hw * 0.95, hh * 0.28, 0);
+        addWave(g, -hw * 0.05, hh * 0.08, hw * 0.95, hh * 0.28, 3.5);
+
+        // ─ Middle section: Progress bars + Level indicators ─
+        // Divider line
+        line([[-hw * 0.92, hh * 0.02, z], [hw * 0.92, hh * 0.02, z]], C, 0.3, g);
+
+        // Progress bars
+        addProgressBars(g, -hw * 0.88, -hh * 0.06, w * 0.45, 5);
+
+        // Level bars
+        addLevelBars(g, hw * 0.1, -hh * 0.42, hh * 0.42, 8, 0.08);
+
+        // ─ Bottom section: Bar chart ─
+        line([[-hw * 0.92, -hh * 0.45, z], [hw * 0.92, -hh * 0.45, z]], C_dim, 0.25, g);
+        addBars(g, -hw * 0.88, -hh * 0.88, w * 0.85, hh * 0.38, 18);
+
+        // ─ Decorative elements ─
+        // Small data dots matrix
+        addDataDots(g, hw * 0.55, -hh * 0.1, hw * 0.32, hh * 0.25, 4, 6);
+
+        // Stacked status rects
+        addStackedRects(g, -hw * 0.88, -hh * 0.5, w * 0.18, 3);
+      },
+    );
+
+    // ── PANEL 2 (Right): Analysis dashboard ─────────────────
+    const p2 = createPanel(pw, ph,
+      new THREE.Vector3(2.1, 0, 0),
+      new THREE.Euler(0, -0.18, 0),
+      (g, w, h) => {
+        const hw = w / 2, hh = h / 2;
+        const z = 0.003;
+
+        // ─ Top section: Hex grid (left) + Progress arcs (right) ─
+        addMiniHex(g, -hw * 0.85, hh * 0.15, 7, 4, 0.08);
+
+        addProgressArcs(g, hw * 0.45, hh * 0.42, 0.38, 4);
+
+        // Small waveform under hex
+        addWave(g, -hw * 0.88, hh * 0.08, hw * 0.8, hh * 0.2, 7);
+
+        // ─ Middle: Divider + Data ─
+        line([[-hw * 0.92, hh * 0.02, z], [hw * 0.92, hh * 0.02, z]], C, 0.3, g);
+
+        // Bar chart
+        addBars(g, -hw * 0.88, -hh * 0.05, hw * 0.82, hh * 0.35, 14);
+
+        // Stacked rects on right
+        addStackedRects(g, hw * 0.12, -hh * 0.08, w * 0.2, 6);
+
+        // Data dots
+        addDataDots(g, hw * 0.42, -hh * 0.15, hw * 0.45, hh * 0.3, 5, 8);
+
+        // ─ Bottom: Second gauge + Progress bars ─
+        line([[-hw * 0.92, -hh * 0.45, z], [hw * 0.92, -hh * 0.45, z]], C_dim, 0.25, g);
+
+        addGauge(g, hw * 0.45, -hh * 0.7, 0.32);
+
+        addProgressBars(g, -hw * 0.88, -hh * 0.55, w * 0.4, 6);
+
+        // Level bars at bottom right area
+        addLevelBars(g, -hw * 0.88, -hh * 0.88, hh * 0.25, 10, 0.065);
+      },
+    );
+
+    // ── Scan beams on both panels ───────────────────────────
+    [p1, p2].forEach(p => {
+      const sbGeo = new THREE.PlaneGeometry(0.02, ph);
+      const sbMat = new THREE.MeshBasicMaterial({
+        color: C_white, transparent: true, opacity: 0.3,
+        blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false,
+      });
+      const sb = new THREE.Mesh(sbGeo, sbMat);
+      sb.position.z = 0.008;
+      p.add(sb);
+      (p as any)._scanBeam = sb;
+      (p as any)._scanMat = sbMat;
+    });
+
+    // ── Ambient particles ───────────────────────────────────
+    const pCount = 120;
+    const ppGeo = new THREE.BufferGeometry();
+    const ppPos = new Float32Array(pCount * 3);
+    const ppVel = new Float32Array(pCount);
+    for (let i = 0; i < pCount; i++) {
+      ppPos[i * 3] = (Math.random() - 0.5) * 10;
+      ppPos[i * 3 + 1] = (Math.random() - 0.5) * 6;
+      ppPos[i * 3 + 2] = (Math.random() - 0.5) * 4 - 1;
+      ppVel[i] = 0.001 + Math.random() * 0.004;
+    }
+    ppGeo.setAttribute("position", new THREE.Float32BufferAttribute(ppPos, 3));
+    scene.add(new THREE.Points(ppGeo, new THREE.PointsMaterial({
+      color: C, size: 0.02, transparent: true, opacity: 0.4,
+      blending: THREE.AdditiveBlending, sizeAttenuation: true, depthWrite: false,
+    })));
+
+    // ── Mouse ───────────────────────────────────────────────
+    let mx = 0, my = 0;
+    container.addEventListener("mousemove", (e) => {
+      const r = container.getBoundingClientRect();
+      mx = ((e.clientX - r.left) / r.width - 0.5) * 2;
+      my = ((e.clientY - r.top) / r.height - 0.5) * 2;
+    });
+    container.addEventListener("mouseleave", () => { mx = 0; my = 0; });
+
+    // ── Resize ──────────────────────────────────────────────
+    function resize() {
+      const r = container.getBoundingClientRect();
+      renderer.setSize(r.width, r.height);
+      camera.aspect = r.width / r.height;
+      camera.updateProjectionMatrix();
+    }
+
+    // ── Animate ─────────────────────────────────────────────
+    let time = 0;
+    function animate() {
+      time += 0.016;
+
+      // Glass shaders
+      glassMats.forEach((m, i) => { m.uniforms.uTime.value = time + i * 5; });
+
+      // Waveforms
+      waveLines.forEach((wd) => {
+        const pos = wd.line.geometry.attributes.position;
+        const count = pos.count;
+        for (let i = 0; i < count; i++) {
+          const t = i / (count - 1);
+          const y = wd.yOff
+            + Math.sin(t * Math.PI * 5 + time * 2.5 + wd.seed) * wd.amp
+            + Math.sin(t * Math.PI * 9 + time * 1.7 + wd.seed * 2) * wd.amp * 0.4;
+          pos.setY(i, y);
+        }
+        pos.needsUpdate = true;
+      });
+
+      // Bar chart animation
+      barSets.forEach((bs) => {
+        bs.meshes.forEach((m, i) => {
+          const target = bs.targets[i] * (0.7 + 0.3 * Math.sin(time * 1.2 + i * 0.4));
+          const curGeo = m.geometry as THREE.PlaneGeometry;
+          const curH = curGeo.parameters.height;
+          if (Math.abs(curH - target) > 0.005) {
+            m.geometry.dispose();
+            m.geometry = new THREE.PlaneGeometry(bs.barW, target);
+            m.position.y = bs.baseY + target / 2;
+            const tl = bs.topLines[i];
+            const tp = tl.geometry.attributes.position;
+            tp.setY(0, bs.baseY + target);
+            tp.setY(1, bs.baseY + target);
+            tp.needsUpdate = true;
+          }
+        });
+      });
+
+      // Sweep arcs
+      sweepArcs.forEach((sa) => {
+        const pos = sa.line.geometry.attributes.position;
+        const count = pos.count;
+        const baseA = time * 1.5;
+        for (let i = 0; i < count; i++) {
+          const a = baseA + (i / (count - 1)) * sa.span;
+          pos.setX(i, sa.cx + Math.cos(a) * sa.r);
+          pos.setY(i, sa.cy + Math.sin(a) * sa.r);
+        }
+        pos.needsUpdate = true;
+      });
+
+      // Scan beams
+      [p1, p2].forEach((p, i) => {
+        const sb = (p as any)._scanBeam as THREE.Mesh;
+        const sm = (p as any)._scanMat as THREE.MeshBasicMaterial;
+        if (sb && sm) {
+          sb.position.x = Math.sin(time * 0.8 + i * 2) * (pw / 2 - 0.1);
+          sm.opacity = 0.15 + Math.sin(time * 3 + i) * 0.1;
+        }
+      });
+
+      // Panels gentle float
+      p1.position.y = Math.sin(time * 0.5) * 0.04;
+      p2.position.y = Math.sin(time * 0.5 + 1.5) * 0.04;
+
+      // Particles
+      const pa = ppGeo.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < pCount; i++) {
+        let y = pa.getY(i);
+        y += ppVel[i];
+        if (y > 3) y = -3;
+        pa.setY(i, y);
+      }
+      pa.needsUpdate = true;
+
+      // Camera
+      camera.position.x += (mx * 0.6 - camera.position.x) * 0.03;
+      camera.position.y += (my * 0.3 - camera.position.y) * 0.03;
+      camera.lookAt(0, 0, 0);
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    animate();
+    new ResizeObserver(() => resize()).observe(container);
+  });
+</script>

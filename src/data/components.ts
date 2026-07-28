@@ -259,6 +259,19 @@ export const components: ComponentMeta[] = [
     ],
   },
   {
+    slug: "holo-window",
+    name: "Holo Window",
+    nameJa: "ホロウィンドウ",
+    category: "data",
+    description: "Three.jsによるアイアンマン/マイノリティ・リポート風ホログラフィックウィンドウ。空中に展開する複数の半透明パネルにデータ表示。",
+    tags: ["3d", "three.js", "hologram", "window", "hud", "iron-man"],
+    status: "stable",
+    props: [
+      { name: "size", type: '"sm" | "md" | "lg"', default: '"md"', description: "高さサイズ", required: false },
+      { name: "color", type: "string", default: '"#00d4e5"', description: "カラー(HEX)", required: false },
+    ],
+  },
+  {
     slug: "hud-orbit",
     name: "HUD Orbit",
     nameJa: "HUDオービット",

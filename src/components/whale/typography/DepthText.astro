@@ -2,38 +2,22 @@
 interface Props {
   tag?: "h1" | "h2" | "h3" | "h4" | "p" | "span";
   variant?: "display" | "ui" | "mono";
-  glow?: boolean;
   class?: string;
 }
 
 const {
   tag: Tag = "h2",
   variant = "display",
-  glow = false,
   class: className = "",
 } = Astro.props;
 
 const variantStyles = {
-  display: "font-display tracking-[0.15em] uppercase text-ocean-200",
-  ui: "font-ui tracking-wider text-ocean-300",
-  mono: "font-mono text-biolum-400",
+  display: "font-display tracking-[0.15em] uppercase text-ink-700",
+  ui: "font-ui tracking-wider text-ink-500",
+  mono: "font-mono text-ink-400",
 };
 ---
 
-<Tag
-  class:list={[
-    variantStyles[variant],
-    glow && "depth-glow",
-    className,
-  ]}
->
+<Tag class:list={[variantStyles[variant], className]}>
   <slot />
 </Tag>
-
-<style>
-  .depth-glow {
-    text-shadow:
-      0 0 8px oklch(0.55 0.14 210 / 0.5),
-      0 0 20px oklch(0.55 0.14 210 / 0.2);
-  }
-</style>

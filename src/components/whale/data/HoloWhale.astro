@@ -26,9 +26,6 @@ const sizes = {
 <script>
   import * as THREE from "three";
   import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-  import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
-  import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
-  import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 
   const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -43,25 +40,8 @@ const sizes = {
 
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
-
-    // === Post-processing bloom ===
-    const rect = container.getBoundingClientRect();
-    const composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(scene, camera));
-
-    const bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(rect.width, rect.height),
-      0.6,   // strength
-      0.3,   // radius
-      0.4    // threshold
-    );
-    composer.addPass(bloomPass);
-
-    const holoCyan = new THREE.Color(0x55ccee);
-    const holoBlue = new THREE.Color(0x3399cc);
-    const holoWhite = new THREE.Color(0x99eeff);
+    const wireColor = new THREE.Color(0x222222);
+    const pointColor = new THREE.Color(0x000000);
 
     const whaleGroup = new THREE.Group();
     scene.add(whaleGroup);
@@ -127,19 +107,18 @@ const sizes = {
 
           // Wireframe body
           child.material = new THREE.MeshBasicMaterial({
-            color: holoCyan,
+            color: wireColor,
             wireframe: true,
             transparent: true,
-            opacity: 0.15,
+            opacity: 0.3,
           });
 
-          // Vertex points (shares geometry — will animate together)
+          // Vertex points
           child.add(new THREE.Points(geo, new THREE.PointsMaterial({
-            color: holoWhite,
+            color: pointColor,
             size: 0.06,
             transparent: true,
-            opacity: 0.6,
-            blending: THREE.AdditiveBlending,
+            opacity: 0.5,
             sizeAttenuation: true,
           })));
         }
@@ -164,7 +143,6 @@ const sizes = {
     function resize() {
       const r = container.getBoundingClientRect();
       renderer.setSize(r.width, r.height);
-      composer.setSize(r.width, r.height);
       camera.aspect = r.width / r.height;
       camera.updateProjectionMatrix();
     }
@@ -237,7 +215,7 @@ const sizes = {
         positions.needsUpdate = true;
       }
 
-      composer.render();
+      renderer.render(scene, camera);
       requestAnimationFrame(animate);
     }
 

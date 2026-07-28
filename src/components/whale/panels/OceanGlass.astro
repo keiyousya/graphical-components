@@ -1,6 +1,6 @@
 ---
 interface Props {
-  variant?: "default" | "deep" | "biolum";
+  variant?: "default" | "dark" | "subtle";
   glow?: boolean;
   corners?: boolean;
   class?: string;
@@ -14,28 +14,25 @@ const {
 } = Astro.props;
 
 const variantStyles = {
-  default: "border-ocean-600/25 bg-abyss-400/60",
-  deep: "border-ocean-700/30 bg-abyss-500/70",
-  biolum: "border-biolum-600/30 bg-abyss-400/50",
+  default: "border-ink-200/40 bg-paper-50/60",
+  dark: "border-ink-300/50 bg-paper-200/40",
+  subtle: "border-ink-100/30 bg-paper-50/40",
 };
-
-const glowShadow = glow ? "shadow-glow-sm" : "";
 ---
 
 <div
   class:list={[
-    "relative border backdrop-blur-md p-5",
+    "relative border backdrop-blur-sm p-5",
     variantStyles[variant],
-    glowShadow,
     className,
   ]}
 >
   {corners && (
     <>
-      <span class="absolute top-0 left-0 w-2 h-2 rounded-full bg-biolum-500/50"></span>
-      <span class="absolute top-0 right-0 w-2 h-2 rounded-full bg-biolum-500/50"></span>
-      <span class="absolute bottom-0 left-0 w-2 h-2 rounded-full bg-biolum-500/50"></span>
-      <span class="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-biolum-500/50"></span>
+      <span class="absolute top-0 left-0 w-1.5 h-1.5 rounded-full bg-ink-400/40"></span>
+      <span class="absolute top-0 right-0 w-1.5 h-1.5 rounded-full bg-ink-400/40"></span>
+      <span class="absolute bottom-0 left-0 w-1.5 h-1.5 rounded-full bg-ink-400/40"></span>
+      <span class="absolute bottom-0 right-0 w-1.5 h-1.5 rounded-full bg-ink-400/40"></span>
     </>
   )}
   <slot />
@@ -43,7 +40,6 @@ const glowShadow = glow ? "shadow-glow-sm" : "";
 
 <style>
   div:hover {
-    border-color: oklch(0.55 0.14 210 / 0.4);
-    box-shadow: 0 0 16px oklch(0.55 0.14 210 / 0.1);
+    border-color: oklch(0.35 0 0 / 0.3);
   }
 </style>

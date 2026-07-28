@@ -9,23 +9,23 @@ const {
   class: className = "",
 } = Astro.props;
 
-const counts = { light: 12, medium: 24, dense: 40 };
+const counts = { light: 8, medium: 16, dense: 28 };
 const count = counts[density];
 
-const bubbles = Array.from({ length: count }, (_, i) => ({
+const dots = Array.from({ length: count }, () => ({
   left: Math.random() * 100,
-  size: 2 + Math.random() * 4,
+  size: 1 + Math.random() * 2,
   delay: Math.random() * 8,
-  duration: 6 + Math.random() * 6,
-  opacity: 0.1 + Math.random() * 0.3,
+  duration: 8 + Math.random() * 8,
+  opacity: 0.06 + Math.random() * 0.12,
 }));
 ---
 
 <div class:list={["fixed inset-0 pointer-events-none overflow-hidden z-0", className]}>
-  {bubbles.map((b) => (
+  {dots.map((d) => (
     <span
-      class="absolute rounded-full bg-biolum-400"
-      style={`left: ${b.left}%; bottom: -10px; width: ${b.size}px; height: ${b.size}px; opacity: ${b.opacity}; animation: bubble-rise ${b.duration}s ease-in-out ${b.delay}s infinite;`}
+      class="absolute rounded-full bg-ink-400"
+      style={`left: ${d.left}%; bottom: -10px; width: ${d.size}px; height: ${d.size}px; opacity: ${d.opacity}; animation: whale-float ${d.duration}s ease-in-out ${d.delay}s infinite;`}
     />
   ))}
 </div>

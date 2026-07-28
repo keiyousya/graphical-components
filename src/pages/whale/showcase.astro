@@ -5,7 +5,6 @@ import OceanGlass from "../../components/whale/panels/OceanGlass.astro";
 import AquaButton from "../../components/whale/controls/AquaButton.astro";
 import DepthText from "../../components/whale/typography/DepthText.astro";
 import DepthIndicator from "../../components/whale/feedback/DepthIndicator.astro";
-import BubbleField from "../../components/whale/decorative/BubbleField.astro";
 import SectionHeader from "../../components/whale/catalog/SectionHeader.astro";
 import DemoBlock from "../../components/whale/catalog/DemoBlock.astro";
 import { url } from "../../utils/paths";
@@ -13,51 +12,41 @@ import { url } from "../../utils/paths";
 
 <WhaleLayout title="Showcase | Whale">
   <div class="relative min-h-dvh">
-    <!-- Background effects -->
-    <div class="pointer-events-none fixed inset-0 z-0 effect-caustic"></div>
-    <BubbleField density="light" />
-    <div class="pointer-events-none fixed inset-0 z-5 whale-scanlines"></div>
-
     <!-- Header -->
-    <header class="sticky top-0 z-50 border-b border-ocean-800/30 bg-abyss-500/80 backdrop-blur-md px-6 py-3">
+    <header class="sticky top-0 z-50 border-b border-ink-100/40 bg-paper-50/80 backdrop-blur-md px-6 py-3">
       <div class="max-w-7xl mx-auto flex items-center justify-between">
         <a href={url("/whale")} class="flex items-center gap-3">
           <DepthIndicator status="online" />
-          <span class="font-display text-xs tracking-[0.15em] text-ocean-400 uppercase">
+          <span class="font-display text-xs tracking-[0.15em] text-ink-500 uppercase">
             WHALE
           </span>
         </a>
-        <nav class="flex items-center gap-4 font-mono text-[10px] text-ocean-500">
-          <a href={url("/whale")} class="hover:text-biolum-400 transition-colors">HOME</a>
-          <a href={url("/whale/showcase")} class="text-biolum-400">SHOWCASE</a>
-          <a href={url("/")} class="hover:text-biolum-400 transition-colors">THEMES</a>
+        <nav class="flex items-center gap-4 font-mono text-[10px] text-ink-400">
+          <a href={url("/whale")} class="hover:text-ink-700 transition-colors">HOME</a>
+          <a href={url("/whale/showcase")} class="text-ink-700">SHOWCASE</a>
+          <a href={url("/")} class="hover:text-ink-700 transition-colors">THEMES</a>
         </nav>
       </div>
     </header>
 
     <main class="relative z-10 max-w-7xl mx-auto px-6 py-12 space-y-20">
 
-      <!-- ======================== -->
-      <!-- SECTION: 3D Component    -->
-      <!-- ======================== -->
+      <!-- 3D Component -->
       <section id="three">
         <SectionHeader title="3D Component" tag="three.js" />
-
         <div class="space-y-6">
-          <DemoBlock title="Holographic Whale" label="ホログラムクジラ">
-            <OceanGlass variant="deep" glow>
-              <HoloWhale size="xl" />
-            </OceanGlass>
+          <DemoBlock title="Wireframe Whale" label="ワイヤーフレームクジラ">
+            <HoloWhale size="xl" />
           </DemoBlock>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <DemoBlock title="Medium Size" label="ミディアム">
-              <OceanGlass variant="default">
+              <OceanGlass variant="subtle">
                 <HoloWhale size="md" />
               </OceanGlass>
             </DemoBlock>
             <DemoBlock title="Small Size" label="スモール">
-              <OceanGlass variant="biolum">
+              <OceanGlass variant="subtle">
                 <HoloWhale size="sm" />
               </OceanGlass>
             </DemoBlock>
@@ -65,49 +54,40 @@ import { url } from "../../utils/paths";
         </div>
       </section>
 
-      <!-- ======================== -->
-      <!-- SECTION: Panels          -->
-      <!-- ======================== -->
+      <!-- Panels -->
       <section id="panels">
         <SectionHeader title="Panels" tag="panels" />
-
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <DemoBlock title="Default Glass" label="デフォルト">
+          <DemoBlock title="Default" label="デフォルト">
             <OceanGlass>
-              <p class="font-ui text-sm text-ocean-300">深海ガラスパネル — デフォルト</p>
-              <p class="font-mono text-[10px] text-ocean-500 mt-2">ocean glass variant</p>
+              <p class="font-ui text-sm text-ink-500">モノクロームパネル</p>
+              <p class="font-mono text-[10px] text-ink-300 mt-2">default variant</p>
             </OceanGlass>
           </DemoBlock>
-
-          <DemoBlock title="Deep Glass" label="ディープ">
-            <OceanGlass variant="deep" glow>
-              <p class="font-ui text-sm text-ocean-300">深海ガラスパネル — ディープ</p>
-              <p class="font-mono text-[10px] text-ocean-500 mt-2">deep variant with glow</p>
+          <DemoBlock title="Dark" label="ダーク">
+            <OceanGlass variant="dark">
+              <p class="font-ui text-sm text-ink-500">ダークパネル</p>
+              <p class="font-mono text-[10px] text-ink-300 mt-2">dark variant</p>
             </OceanGlass>
           </DemoBlock>
-
-          <DemoBlock title="Bioluminescent" label="生物発光">
-            <OceanGlass variant="biolum" glow>
-              <p class="font-ui text-sm text-biolum-300">生物発光パネル</p>
-              <p class="font-mono text-[10px] text-ocean-500 mt-2">bioluminescent variant</p>
+          <DemoBlock title="Subtle" label="サトル">
+            <OceanGlass variant="subtle">
+              <p class="font-ui text-sm text-ink-500">サトルパネル</p>
+              <p class="font-mono text-[10px] text-ink-300 mt-2">subtle variant</p>
             </OceanGlass>
           </DemoBlock>
         </div>
       </section>
 
-      <!-- ======================== -->
-      <!-- SECTION: Controls        -->
-      <!-- ======================== -->
+      <!-- Controls -->
       <section id="controls">
         <SectionHeader title="Controls" tag="controls" />
-
-        <DemoBlock title="Aqua Buttons" label="ボタン">
-          <OceanGlass>
+        <DemoBlock title="Buttons" label="ボタン">
+          <OceanGlass variant="subtle">
             <div class="flex flex-wrap gap-3">
               <AquaButton variant="default">Default</AquaButton>
-              <AquaButton variant="biolum">Biolum</AquaButton>
-              <AquaButton variant="bokeh">Bokeh</AquaButton>
-              <AquaButton variant="sonar">Sonar</AquaButton>
+              <AquaButton variant="dark">Dark</AquaButton>
+              <AquaButton variant="subtle">Subtle</AquaButton>
             </div>
             <div class="flex flex-wrap gap-3 mt-4">
               <AquaButton variant="default" size="sm">Small</AquaButton>
@@ -118,36 +98,30 @@ import { url } from "../../utils/paths";
         </DemoBlock>
       </section>
 
-      <!-- ======================== -->
-      <!-- SECTION: Typography      -->
-      <!-- ======================== -->
+      <!-- Typography -->
       <section id="typography">
         <SectionHeader title="Typography" tag="type" />
-
-        <DemoBlock title="Depth Text" label="テキスト">
-          <OceanGlass>
+        <DemoBlock title="Text Styles" label="テキスト">
+          <OceanGlass variant="subtle">
             <div class="space-y-4">
-              <DepthText tag="h1" variant="display" glow class="text-3xl">DEEP OCEAN</DepthText>
-              <DepthText tag="h2" variant="display" class="text-xl">Holographic Interface</DepthText>
-              <DepthText tag="p" variant="ui" class="text-base">深海ホログラフィックインターフェースのタイポグラフィ</DepthText>
-              <DepthText tag="span" variant="mono" class="text-sm">DEPTH: 2,400m // TEMP: 2.3°C // STATUS: ACTIVE</DepthText>
+              <DepthText tag="h1" variant="display" class="text-3xl">WIREFRAME</DepthText>
+              <DepthText tag="h2" variant="display" class="text-xl">Monochrome Interface</DepthText>
+              <DepthText tag="p" variant="ui" class="text-base">モノクロームワイヤーフレームインターフェース</DepthText>
+              <DepthText tag="span" variant="mono" class="text-sm">DEPTH: 2,400m // STATUS: ACTIVE</DepthText>
             </div>
           </OceanGlass>
         </DemoBlock>
       </section>
 
-      <!-- ======================== -->
-      <!-- SECTION: Feedback        -->
-      <!-- ======================== -->
+      <!-- Feedback -->
       <section id="feedback">
         <SectionHeader title="Feedback" tag="status" />
-
-        <DemoBlock title="Depth Indicators" label="ステータス">
-          <OceanGlass>
+        <DemoBlock title="Indicators" label="ステータス">
+          <OceanGlass variant="subtle">
             <div class="flex flex-wrap gap-6">
               <DepthIndicator status="online" label="ONLINE" />
-              <DepthIndicator status="deep" label="DEEP DIVE" />
-              <DepthIndicator status="surface" label="SURFACE" />
+              <DepthIndicator status="idle" label="IDLE" />
+              <DepthIndicator status="active" label="ACTIVE" />
               <DepthIndicator status="warning" label="WARNING" />
             </div>
           </OceanGlass>
@@ -157,10 +131,10 @@ import { url } from "../../utils/paths";
     </main>
 
     <!-- Footer -->
-    <footer class="relative z-10 border-t border-ocean-800/30 bg-abyss-500/50 backdrop-blur-sm px-6 py-4 mt-20">
+    <footer class="relative z-10 border-t border-ink-100/40 px-6 py-4 mt-20">
       <div class="max-w-7xl mx-auto flex items-center justify-between">
         <DepthIndicator status="online" label="SHOWCASE.ACTIVE" />
-        <span class="font-mono text-[10px] text-ocean-700 tracking-wider">
+        <span class="font-mono text-[10px] text-ink-300 tracking-wider">
           WHALE.THEME // GRAPHICAL.COMPONENTS
         </span>
       </div>

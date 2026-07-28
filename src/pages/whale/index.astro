@@ -1,7 +1,6 @@
 ---
 import WhaleLayout from "../../layouts/WhaleLayout.astro";
 import HoloWhale from "../../components/whale/data/HoloWhale.astro";
-import BubbleField from "../../components/whale/decorative/BubbleField.astro";
 import AquaButton from "../../components/whale/controls/AquaButton.astro";
 import DepthIndicator from "../../components/whale/feedback/DepthIndicator.astro";
 import { url } from "../../utils/paths";
@@ -9,54 +8,28 @@ import { url } from "../../utils/paths";
 
 <WhaleLayout title="Whale | Graphical Components">
   <div class="relative min-h-dvh flex flex-col overflow-hidden">
-    <!-- Deep ocean vignette -->
-    <div
-      class="pointer-events-none fixed inset-0 z-10 bg-[radial-gradient(ellipse_at_center,transparent_30%,oklch(0.03_0.01_240/0.9))]"
-    ></div>
-
-    <!-- Subtle caustic overlay -->
-    <div class="pointer-events-none fixed inset-0 z-5 effect-caustic"></div>
-
-    <!-- Bubble field -->
-    <BubbleField density="medium" />
-
-    <!-- Scanlines -->
-    <div class="pointer-events-none fixed inset-0 z-20 whale-scanlines"></div>
-
     <!-- Header -->
     <header
-      class="relative z-30 flex items-center justify-between border-b border-ocean-800/30 px-6 py-3 bg-abyss-500/50 backdrop-blur-sm"
+      class="relative z-30 flex items-center justify-between border-b border-ink-100/40 px-6 py-3"
     >
       <div class="flex items-center gap-3">
-        <DepthIndicator status="online" label="DEPTH.SCAN // WHALE.THEME" />
+        <DepthIndicator status="online" label="WHALE.THEME" />
       </div>
-      <a href={url("/")} class="font-mono text-[10px] text-ocean-600 hover:text-biolum-400 transition-colors">
+      <a href={url("/")} class="font-mono text-[10px] text-ink-300 hover:text-ink-600 transition-colors">
         &lt;themes/&gt;
       </a>
     </header>
 
     <!-- Hero -->
     <main class="relative z-30 flex-1 flex flex-col items-center justify-center px-6 py-8">
-      <!-- Sonar rings -->
-      <div class="relative mb-6">
-        <div
-          class="absolute -inset-10 rounded-full border border-ocean-700/20 animate-sonar-sweep"
-          style="border-top-color: oklch(0.55 0.14 210 / 0.5);"
-        ></div>
-        <div
-          class="absolute -inset-20 rounded-full border border-ocean-800/15 animate-sonar-sweep"
-          style="animation-duration: 6s; animation-direction: reverse;"
-        ></div>
-
-        <!-- Title block -->
-        <div class="relative text-center">
-          <h1 class="font-display text-4xl md:text-6xl tracking-[0.2em] uppercase text-ocean-200 mb-2 whale-title-glow">
-            WHALE
-          </h1>
-          <p class="font-mono text-[10px] text-ocean-500 tracking-[0.25em] uppercase">
-            Holographic Ocean Interface
-          </p>
-        </div>
+      <!-- Title -->
+      <div class="relative text-center mb-6">
+        <h1 class="font-display text-4xl md:text-6xl tracking-[0.2em] uppercase text-ink-700 mb-2">
+          WHALE
+        </h1>
+        <p class="font-mono text-[10px] text-ink-300 tracking-[0.25em] uppercase">
+          Monochrome Wireframe Interface
+        </p>
       </div>
 
       <!-- 3D Whale -->
@@ -64,23 +37,23 @@ import { url } from "../../utils/paths";
         <HoloWhale size="xl" />
       </div>
 
-      <!-- Depth info -->
+      <!-- Info -->
       <div class="mt-4 text-center space-y-4">
-        <p class="font-ui text-sm text-ocean-400 tracking-wider">
-          深海ホログラフィックインターフェース
+        <p class="font-ui text-sm text-ink-400 tracking-wider">
+          ワイヤーフレームクジラインターフェース
         </p>
-        <div class="flex items-center justify-center gap-6 font-mono text-[10px] text-ocean-600">
+        <div class="flex items-center justify-center gap-6 font-mono text-[10px] text-ink-300">
           <span>DEPTH: 2,400m</span>
-          <span class="text-biolum-500">|</span>
+          <span class="text-ink-200">|</span>
           <span>TEMP: 2.3°C</span>
-          <span class="text-biolum-500">|</span>
+          <span class="text-ink-200">|</span>
           <span>PRESSURE: 241 ATM</span>
         </div>
       </div>
 
       <!-- CTA -->
       <div class="mt-8 flex items-center gap-4">
-        <AquaButton variant="biolum" href={url("/whale/showcase")}>
+        <AquaButton variant="dark" href={url("/whale/showcase")}>
           Showcase
         </AquaButton>
         <AquaButton variant="default" href={url("/")}>
@@ -90,25 +63,13 @@ import { url } from "../../utils/paths";
     </main>
 
     <!-- Footer -->
-    <footer class="relative z-30 border-t border-ocean-800/30 px-6 py-3 bg-abyss-500/30 backdrop-blur-sm">
+    <footer class="relative z-30 border-t border-ink-100/40 px-6 py-3">
       <div class="flex items-center justify-between">
-        <div class="flex items-center gap-4 font-mono text-[10px] text-ocean-700">
-          <span>SONAR.ACTIVE</span>
-          <DepthIndicator status="deep" />
-        </div>
-        <span class="font-mono text-[10px] text-ocean-700 tracking-wider">
+        <DepthIndicator status="idle" label="SONAR.ACTIVE" />
+        <span class="font-mono text-[10px] text-ink-300 tracking-wider">
           WHALE.THEME // GRAPHICAL.COMPONENTS
         </span>
       </div>
     </footer>
   </div>
-
-  <style>
-    .whale-title-glow {
-      text-shadow:
-        0 0 20px oklch(0.55 0.14 210 / 0.4),
-        0 0 60px oklch(0.55 0.14 210 / 0.15),
-        0 0 100px oklch(0.45 0.12 220 / 0.08);
-    }
-  </style>
 </WhaleLayout>

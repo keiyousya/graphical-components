@@ -1,6 +1,6 @@
 ---
 interface Props {
-  variant?: "default" | "biolum" | "bokeh" | "sonar";
+  variant?: "default" | "dark" | "subtle";
   size?: "sm" | "md" | "lg";
   href?: string;
   class?: string;
@@ -14,10 +14,9 @@ const {
 } = Astro.props;
 
 const variantStyles = {
-  default: "border-ocean-500/40 text-ocean-200 hover:bg-ocean-500/15 hover:border-ocean-400/60",
-  biolum: "border-biolum-500/40 text-biolum-200 hover:bg-biolum-500/15 hover:border-biolum-400/60",
-  bokeh: "border-bokeh-500/40 text-bokeh-300 hover:bg-bokeh-500/15 hover:border-bokeh-400/60",
-  sonar: "border-sonar-400/40 text-sonar-400 hover:bg-sonar-400/15 hover:border-sonar-400/60",
+  default: "border-ink-400/40 text-ink-600 hover:bg-ink-100/30 hover:border-ink-500/50",
+  dark: "border-ink-600/50 text-ink-700 hover:bg-ink-200/30 hover:border-ink-700/60",
+  subtle: "border-ink-200/30 text-ink-400 hover:bg-ink-100/20 hover:border-ink-300/40",
 };
 
 const sizeStyles = {
@@ -40,9 +39,3 @@ const Tag = href ? "a" : "button";
 >
   <slot />
 </Tag>
-
-<style>
-  a:hover, button:hover {
-    box-shadow: 0 0 12px oklch(0.55 0.14 210 / 0.2);
-  }
-</style>

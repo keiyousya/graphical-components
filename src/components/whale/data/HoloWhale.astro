@@ -26,6 +26,7 @@ const sizes = {
 <script>
   import * as THREE from "three";
   import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+  import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
   const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -35,8 +36,8 @@ const sizes = {
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(50, 2, 0.1, 200);
-    camera.position.set(0, -5, 7);
-    camera.lookAt(0, -3, 0);
+    camera.position.set(0, 1, 12);
+    camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -59,7 +60,7 @@ const sizes = {
 
     // === Load whale GLB model ===
     const loader = new GLTFLoader();
-    loader.load(`${BASE_URL}/models/whale.glb`, (gltf) => {
+    loader.load(`${BASE_URL}/models/humpback-whale.glb`, (gltf) => {
       const model = gltf.scene;
 
       // Center and scale
@@ -72,72 +73,81 @@ const sizes = {
       model.position.sub(center);
       model.scale.setScalar(scale);
 
-      // Rotate so the whale faces sideways (Z-axis model → X-axis view)
-      model.rotation.y = Math.PI / 2;
+      // No rotation needed — model is already along X axis
 
+      // Collect meshes first (avoid modifying tree during traverse)
+      const meshes: THREE.Mesh[] = [];
       model.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          const geo = child.geometry;
-
-          // Store original positions for swimming deformation
-          const positions = geo.getAttribute("position");
-          const origPos = new Float32Array(positions.array.length);
-          origPos.set(positions.array as Float32Array);
-
-          // Compute Z range (body length axis) and X range (width for fin detection)
-          let zMin = Infinity, zMax = -Infinity;
-          let xMin = Infinity, xMax = -Infinity;
-          for (let i = 0; i < positions.count; i++) {
-            const z = positions.getZ(i);
-            const x = positions.getX(i);
-            if (z < zMin) zMin = z;
-            if (z > zMax) zMax = z;
-            if (x < xMin) xMin = x;
-            if (x > xMax) xMax = x;
-          }
-
-          swimTargets.push({
-            geo,
-            origPositions: origPos,
-            zMin,
-            zRange: zMax - zMin,
-            xMin,
-            xRange: xMax - xMin,
-          });
-
-          // Wireframe body
-          child.material = new THREE.MeshBasicMaterial({
-            color: wireColor,
-            wireframe: true,
-            transparent: true,
-            opacity: 0.3,
-          });
-
-          // Vertex points
-          child.add(new THREE.Points(geo, new THREE.PointsMaterial({
-            color: pointColor,
-            size: 0.06,
-            transparent: true,
-            opacity: 0.5,
-            sizeAttenuation: true,
-          })));
-        }
+        if (child instanceof THREE.Mesh) meshes.push(child);
       });
 
+      for (const mesh of meshes) {
+        const geo = mesh.geometry;
+
+        // Store original positions for swimming deformation
+        const positions = geo.getAttribute("position");
+        const origPos = new Float32Array(positions.array.length);
+        origPos.set(positions.array as Float32Array);
+
+        // Compute X range (body length axis) and Z range (width for fin detection)
+        let xMin = Infinity, xMax = -Infinity;
+        let zMin = Infinity, zMax = -Infinity;
+        for (let i = 0; i < positions.count; i++) {
+          const x = positions.getX(i);
+          const z = positions.getZ(i);
+          if (x < xMin) xMin = x;
+          if (x > xMax) xMax = x;
+          if (z < zMin) zMin = z;
+          if (z > zMax) zMax = z;
+        }
+
+        swimTargets.push({
+          geo,
+          origPositions: origPos,
+          zMin: xMin,
+          zRange: xMax - xMin,
+          xMin: zMin,
+          xRange: zMax - zMin,
+        });
+
+        // Solid surface (hides back-face lines)
+        mesh.material = new THREE.MeshBasicMaterial({
+          color: 0xf5f5f5,
+          polygonOffset: true,
+          polygonOffsetFactor: 1,
+          polygonOffsetUnits: 1,
+        });
+
+        // Wireframe overlay added to parent (not mesh itself)
+        const wireMesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+          color: wireColor,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.3,
+        }));
+        wireMesh.position.copy(mesh.position);
+        wireMesh.rotation.copy(mesh.rotation);
+        wireMesh.scale.copy(mesh.scale);
+        mesh.parent!.add(wireMesh);
+      }
+
       whaleGroup.add(model);
+
+      // Debug: log model info
+      const b = new THREE.Box3().setFromObject(whaleGroup);
+      const s = b.getSize(new THREE.Vector3());
+      const c = b.getCenter(new THREE.Vector3());
+      console.log("Whale loaded:", { size: s, center: c, children: whaleGroup.children.length });
     });
 
-    // === Mouse interaction ===
-    let mouseX = 0, mouseY = 0;
-    container.addEventListener("mousemove", (e) => {
-      const r = container.getBoundingClientRect();
-      mouseX = ((e.clientX - r.left) / r.width - 0.5) * 2;
-      mouseY = ((e.clientY - r.top) / r.height - 0.5) * 2;
-    });
-    container.addEventListener("mouseleave", () => {
-      mouseX = 0;
-      mouseY = 0;
-    });
+    // === Orbit controls (360° rotation) ===
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = true;
+    controls.enablePan = false;
+    controls.minDistance = 4;
+    controls.maxDistance = 25;
 
     // === Resize ===
     function resize() {
@@ -152,46 +162,47 @@ const sizes = {
     function animate() {
       time += 0.01;
 
-      // Whale body drift
-      whaleGroup.rotation.y += (0.3 + mouseX * 0.5 - whaleGroup.rotation.y) * 0.02;
-      whaleGroup.rotation.x += (mouseY * 0.15 - whaleGroup.rotation.x) * 0.02;
-      whaleGroup.position.y = Math.sin(time * 0.5) * 0.3;
-      whaleGroup.position.x = Math.sin(time * 0.3) * 0.15;
-      whaleGroup.rotation.z = Math.sin(time * 0.4) * 0.03;
+      // Gentle floating motion
+      whaleGroup.position.y = Math.sin(time * 0.5) * 0.15;
+
+      controls.update();
 
       // Swimming vertex deformation (dolphin kick + fin movement)
       for (const sd of swimTargets) {
         const positions = sd.geo.getAttribute("position") as THREE.BufferAttribute;
         for (let i = 0; i < positions.count; i++) {
-          const origZ = sd.origPositions[i * 3 + 2]; // body length axis
-          const origY = sd.origPositions[i * 3 + 1]; // vertical
-          const origX = sd.origPositions[i * 3];      // width
+          const origX = sd.origPositions[i * 3];       // body length axis (model X)
+          const origY = sd.origPositions[i * 3 + 1];  // vertical
+          const origZ = sd.origPositions[i * 3 + 2];  // width
 
-          // Normalize Z position along body (0 = head, 1 = tail)
-          const t = 1 - (origZ - sd.zMin) / sd.zRange;
+          // Normalize along body (0 = head, 1 = tail)
+          const t = 1 - (origX - sd.zMin) / sd.zRange;
 
-          // === Dolphin kick (propagating wave with large phase delay) ===
-          // Large phase offset (t * 6.0) creates visible wave propagation head→tail
+          // === Dolphin kick (tail half only, t > 0.4) ===
           const phase = time * 2.5 - t * 6.0;
           const wave = Math.sin(phase);
 
-          // Base amplitude: cubic increase toward tail (gentler)
-          const baseAmplitude = t * t * t * 0.9;
+          // Only move rear half of body
+          const tailStart = 0.4;
+          const tailT = t > tailStart ? (t - tailStart) / (1 - tailStart) : 0;
 
-          // Downstroke power: rear body (t>0.3) drops together
-          const rearFactor = t > 0.3 ? Math.pow((t - 0.3) / 0.7, 1.5) : 0;
+          // Base amplitude: cubic increase from mid-body to tail
+          const baseAmplitude = tailT * tailT * tailT * 0.9;
+
+          // Downstroke power
+          const rearFactor = tailT > 0 ? Math.pow(tailT, 1.5) : 0;
           const downPower = Math.min(wave, 0) * rearFactor * 1.2;
 
-          // Upstroke: tail tip (t>0.7) whips up sharply
-          const tailTip = t > 0.7 ? Math.pow((t - 0.7) / 0.3, 2) : 0;
+          // Upstroke: tail tip whips up
+          const tailTip = tailT > 0.6 ? Math.pow((tailT - 0.6) / 0.4, 2) : 0;
           const upWhip = Math.max(wave, 0) * tailTip * 1.4;
 
           const tailWave = wave * baseAmplitude + downPower + upWhip;
           let newY = origY + tailWave;
 
           // === Pectoral fin flapping (phase delay from root to tip) ===
-          const xNorm = (origX - sd.xMin) / sd.xRange;
-          const lateralExtent = Math.abs(xNorm - 0.5) * 2; // 0=center, 1=tip
+          const zNorm = (origZ - sd.xMin) / sd.xRange;
+          const lateralExtent = Math.abs(zNorm - 0.5) * 2; // 0=center, 1=tip
           const isFinArea = t > 0.2 && t < 0.55 && lateralExtent > 0.35;
           if (isFinArea) {
             // Phase delays from root→tip for fluid wing motion
@@ -203,14 +214,12 @@ const sizes = {
             newY += flapDown + flapUp;
             // Forward/back sweep with same phase delay
             const sweep = Math.cos(time * 3.0 - tipFactor * 2.5) * tipFactor * 0.25;
-            positions.setZ(i, origZ + sweep);
+            positions.setX(i, origX + sweep);
           }
 
           positions.setY(i, newY);
 
-          // === Body undulation (lateral S-wave) ===
-          const bodyUndulation = Math.sin(time * 2.5 - t * 4.0) * t * t * 0.25;
-          positions.setX(i, origX + bodyUndulation);
+          // No head undulation — keep front body still
         }
         positions.needsUpdate = true;
       }

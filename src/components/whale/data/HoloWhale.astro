@@ -66,8 +66,16 @@ const sizes = {
     const whaleGroup = new THREE.Group();
     scene.add(whaleGroup);
 
-    // Track meshes for animated scan effect
-    const whaleMeshes: THREE.Mesh[] = [];
+    // Swimming animation data
+    interface SwimData {
+      geo: THREE.BufferGeometry;
+      origPositions: Float32Array;
+      zMin: number;
+      zRange: number;
+      xMin: number;
+      xRange: number;
+    }
+    const swimTargets: SwimData[] = [];
 
     // === Load whale GLB model ===
     const loader = new GLTFLoader();
@@ -90,7 +98,32 @@ const sizes = {
       model.traverse((child) => {
         if (child instanceof THREE.Mesh) {
           const geo = child.geometry;
-          whaleMeshes.push(child);
+
+          // Store original positions for swimming deformation
+          const positions = geo.getAttribute("position");
+          const origPos = new Float32Array(positions.array.length);
+          origPos.set(positions.array as Float32Array);
+
+          // Compute Z range (body length axis) and X range (width for fin detection)
+          let zMin = Infinity, zMax = -Infinity;
+          let xMin = Infinity, xMax = -Infinity;
+          for (let i = 0; i < positions.count; i++) {
+            const z = positions.getZ(i);
+            const x = positions.getX(i);
+            if (z < zMin) zMin = z;
+            if (z > zMax) zMax = z;
+            if (x < xMin) xMin = x;
+            if (x > xMax) xMax = x;
+          }
+
+          swimTargets.push({
+            geo,
+            origPositions: origPos,
+            zMin,
+            zRange: zMax - zMin,
+            xMin,
+            xRange: xMax - xMin,
+          });
 
           // Wireframe body
           child.material = new THREE.MeshBasicMaterial({
@@ -100,15 +133,7 @@ const sizes = {
             opacity: 0.15,
           });
 
-          // Edge lines (bright contour)
-          const edges = new THREE.EdgesGeometry(geo, 20);
-          child.add(new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
-            color: holoWhite,
-            transparent: true,
-            opacity: 0.6,
-          })));
-
-          // Vertex points
+          // Vertex points (shares geometry — will animate together)
           child.add(new THREE.Points(geo, new THREE.PointsMaterial({
             color: holoWhite,
             size: 0.06,
@@ -117,31 +142,6 @@ const sizes = {
             blending: THREE.AdditiveBlending,
             sizeAttenuation: true,
           })));
-
-          // Network connections
-          const positions = geo.getAttribute("position");
-          if (positions) {
-            const vtxCount = positions.count;
-            const lineCount = Math.min(300, vtxCount * 2);
-            const linePos = new Float32Array(lineCount * 6);
-            for (let i = 0; i < lineCount; i++) {
-              const idx1 = Math.floor(Math.random() * vtxCount);
-              const idx2 = (idx1 + 1 + Math.floor(Math.random() * 5)) % vtxCount;
-              linePos[i * 6] = positions.getX(idx1);
-              linePos[i * 6 + 1] = positions.getY(idx1);
-              linePos[i * 6 + 2] = positions.getZ(idx1);
-              linePos[i * 6 + 3] = positions.getX(idx2);
-              linePos[i * 6 + 4] = positions.getY(idx2);
-              linePos[i * 6 + 5] = positions.getZ(idx2);
-            }
-            const lineGeo = new THREE.BufferGeometry();
-            lineGeo.setAttribute("position", new THREE.BufferAttribute(linePos, 3));
-            child.add(new THREE.LineSegments(lineGeo, new THREE.LineBasicMaterial({
-              color: holoBlue,
-              transparent: true,
-              opacity: 0.12,
-            })));
-          }
         }
       });
 
@@ -174,12 +174,68 @@ const sizes = {
     function animate() {
       time += 0.01;
 
-      // Whale swimming motion
+      // Whale body drift
       whaleGroup.rotation.y += (0.3 + mouseX * 0.5 - whaleGroup.rotation.y) * 0.02;
       whaleGroup.rotation.x += (mouseY * 0.15 - whaleGroup.rotation.x) * 0.02;
       whaleGroup.position.y = Math.sin(time * 0.5) * 0.3;
       whaleGroup.position.x = Math.sin(time * 0.3) * 0.15;
       whaleGroup.rotation.z = Math.sin(time * 0.4) * 0.03;
+
+      // Swimming vertex deformation (dolphin kick + fin movement)
+      for (const sd of swimTargets) {
+        const positions = sd.geo.getAttribute("position") as THREE.BufferAttribute;
+        for (let i = 0; i < positions.count; i++) {
+          const origZ = sd.origPositions[i * 3 + 2]; // body length axis
+          const origY = sd.origPositions[i * 3 + 1]; // vertical
+          const origX = sd.origPositions[i * 3];      // width
+
+          // Normalize Z position along body (0 = head, 1 = tail)
+          const t = 1 - (origZ - sd.zMin) / sd.zRange;
+
+          // === Dolphin kick (propagating wave with large phase delay) ===
+          // Large phase offset (t * 6.0) creates visible wave propagation head→tail
+          const phase = time * 2.5 - t * 6.0;
+          const wave = Math.sin(phase);
+
+          // Base amplitude: cubic increase toward tail (gentler)
+          const baseAmplitude = t * t * t * 0.9;
+
+          // Downstroke power: rear body (t>0.3) drops together
+          const rearFactor = t > 0.3 ? Math.pow((t - 0.3) / 0.7, 1.5) : 0;
+          const downPower = Math.min(wave, 0) * rearFactor * 1.2;
+
+          // Upstroke: tail tip (t>0.7) whips up sharply
+          const tailTip = t > 0.7 ? Math.pow((t - 0.7) / 0.3, 2) : 0;
+          const upWhip = Math.max(wave, 0) * tailTip * 1.4;
+
+          const tailWave = wave * baseAmplitude + downPower + upWhip;
+          let newY = origY + tailWave;
+
+          // === Pectoral fin flapping (phase delay from root to tip) ===
+          const xNorm = (origX - sd.xMin) / sd.xRange;
+          const lateralExtent = Math.abs(xNorm - 0.5) * 2; // 0=center, 1=tip
+          const isFinArea = t > 0.2 && t < 0.55 && lateralExtent > 0.35;
+          if (isFinArea) {
+            // Phase delays from root→tip for fluid wing motion
+            const tipFactor = Math.pow((lateralExtent - 0.35) / 0.65, 1.3);
+            const finPhase = Math.sin(time * 3.0 - tipFactor * 2.5);
+            // Amplitude grows toward tip
+            const flapDown = Math.min(finPhase, 0) * tipFactor * 1.2;
+            const flapUp = Math.max(finPhase, 0) * tipFactor * 0.8;
+            newY += flapDown + flapUp;
+            // Forward/back sweep with same phase delay
+            const sweep = Math.cos(time * 3.0 - tipFactor * 2.5) * tipFactor * 0.25;
+            positions.setZ(i, origZ + sweep);
+          }
+
+          positions.setY(i, newY);
+
+          // === Body undulation (lateral S-wave) ===
+          const bodyUndulation = Math.sin(time * 2.5 - t * 4.0) * t * t * 0.25;
+          positions.setX(i, origX + bodyUndulation);
+        }
+        positions.needsUpdate = true;
+      }
 
       composer.render();
       requestAnimationFrame(animate);

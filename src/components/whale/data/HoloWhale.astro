@@ -47,16 +47,25 @@ const sizes = {
     const whaleGroup = new THREE.Group();
     scene.add(whaleGroup);
 
-    // Swimming animation data
+    // Swimming animation data (body + eyes only)
     interface SwimData {
       geo: THREE.BufferGeometry;
       origPositions: Float32Array;
-      zMin: number;
-      zRange: number;
-      xMin: number;
-      xRange: number;
     }
     const swimTargets: SwimData[] = [];
+
+    // Barnacle data (move as whole objects)
+    interface BarnacleData {
+      obj: THREE.Object3D; // parent object (pCylinder)
+      origPos: THREE.Vector3; // original world position
+      bodyT: number; // normalized position along body (0=head, 1=tail)
+      bodyZNorm: number; // normalized lateral position (0..1)
+    }
+    const barnacles: BarnacleData[] = [];
+
+    // Global body ranges (from body mesh only)
+    let bodyXMin = Infinity, bodyXMax = -Infinity;
+    let bodyZMin = Infinity, bodyZMax = -Infinity;
 
     // === Load whale GLB model ===
     const loader = new GLTFLoader();
@@ -81,36 +90,39 @@ const sizes = {
         if (child instanceof THREE.Mesh) meshes.push(child);
       });
 
+      // Separate body/eye meshes from barnacles
+      const bodyMeshes: THREE.Mesh[] = [];
+      const barnacleMeshes: THREE.Mesh[] = [];
       for (const mesh of meshes) {
-        const geo = mesh.geometry;
+        if (mesh.name.includes("hujitubo")) {
+          barnacleMeshes.push(mesh);
+        } else {
+          bodyMeshes.push(mesh);
+        }
+      }
 
-        // Store original positions for swimming deformation
+      // Compute body ranges from body mesh only
+      for (const mesh of bodyMeshes) {
+        const positions = mesh.geometry.getAttribute("position");
+        for (let i = 0; i < positions.count; i++) {
+          const x = positions.getX(i);
+          const z = positions.getZ(i);
+          if (x < bodyXMin) bodyXMin = x;
+          if (x > bodyXMax) bodyXMax = x;
+          if (z < bodyZMin) bodyZMin = z;
+          if (z > bodyZMax) bodyZMax = z;
+        }
+      }
+
+      // Setup body meshes for vertex deformation
+      for (const mesh of bodyMeshes) {
+        const geo = mesh.geometry;
         const positions = geo.getAttribute("position");
         const origPos = new Float32Array(positions.array.length);
         origPos.set(positions.array as Float32Array);
 
-        // Compute X range (body length axis) and Z range (width for fin detection)
-        let xMin = Infinity, xMax = -Infinity;
-        let zMin = Infinity, zMax = -Infinity;
-        for (let i = 0; i < positions.count; i++) {
-          const x = positions.getX(i);
-          const z = positions.getZ(i);
-          if (x < xMin) xMin = x;
-          if (x > xMax) xMax = x;
-          if (z < zMin) zMin = z;
-          if (z > zMax) zMax = z;
-        }
+        swimTargets.push({ geo, origPositions: origPos });
 
-        swimTargets.push({
-          geo,
-          origPositions: origPos,
-          zMin: xMin,
-          zRange: xMax - xMin,
-          xMin: zMin,
-          xRange: zMax - zMin,
-        });
-
-        // Solid surface (hides back-face lines)
         mesh.material = new THREE.MeshBasicMaterial({
           color: 0xf5f5f5,
           polygonOffset: true,
@@ -118,7 +130,6 @@ const sizes = {
           polygonOffsetUnits: 1,
         });
 
-        // Wireframe overlay added to parent (not mesh itself)
         const wireMesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
           color: wireColor,
           wireframe: true,
@@ -131,13 +142,50 @@ const sizes = {
         mesh.parent!.add(wireMesh);
       }
 
+      // Setup barnacles — store world position and compute body-relative coords
+      const bodyXRange = bodyXMax - bodyXMin;
+      const bodyZRange = bodyZMax - bodyZMin;
+      for (const mesh of barnacleMeshes) {
+        // Style barnacles the same way
+        mesh.material = new THREE.MeshBasicMaterial({
+          color: 0xf5f5f5,
+          polygonOffset: true,
+          polygonOffsetFactor: 1,
+          polygonOffsetUnits: 1,
+        });
+        const wireMesh = new THREE.Mesh(mesh.geometry, new THREE.MeshBasicMaterial({
+          color: wireColor,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.3,
+        }));
+        wireMesh.position.copy(mesh.position);
+        wireMesh.rotation.copy(mesh.rotation);
+        wireMesh.scale.copy(mesh.scale);
+        mesh.parent!.add(wireMesh);
+
+        // Use the parent object (pCylinder) for whole-object movement
+        const parentObj = mesh.parent!;
+        // parentObj.position is in model-local space (same coord system as body vertices)
+        const lp = parentObj.position;
+        const bT = (lp.x - bodyXMin) / bodyXRange;
+        const bZ = (lp.z - bodyZMin) / bodyZRange;
+        barnacles.push({
+          obj: parentObj,
+          origPos: lp.clone(),
+          bodyT: bT,
+          bodyZNorm: bZ,
+        });
+      }
+
       whaleGroup.add(model);
 
-      // Debug: log model info
-      const b = new THREE.Box3().setFromObject(whaleGroup);
-      const s = b.getSize(new THREE.Vector3());
-      const c = b.getCenter(new THREE.Vector3());
-      console.log("Whale loaded:", { size: s, center: c, children: whaleGroup.children.length });
+      console.log("Whale loaded:", {
+        bodyMeshes: bodyMeshes.length,
+        barnacles: barnacles.length,
+        bodyXRange: bodyXRange,
+        bodyZRange: bodyZRange,
+      });
     });
 
     // === Orbit controls (360° rotation) ===
@@ -168,60 +216,101 @@ const sizes = {
       controls.update();
 
       // Swimming vertex deformation (dolphin kick + fin movement)
+      const bodyXRange = bodyXMax - bodyXMin;
+      const bodyZRange = bodyZMax - bodyZMin;
+      const amp = bodyXRange * 0.04;
+
       for (const sd of swimTargets) {
         const positions = sd.geo.getAttribute("position") as THREE.BufferAttribute;
+
         for (let i = 0; i < positions.count; i++) {
-          const origX = sd.origPositions[i * 3];       // body length axis (model X)
-          const origY = sd.origPositions[i * 3 + 1];  // vertical
-          const origZ = sd.origPositions[i * 3 + 2];  // width
+          const origX = sd.origPositions[i * 3];
+          const origY = sd.origPositions[i * 3 + 1];
+          const origZ = sd.origPositions[i * 3 + 2];
 
-          // Normalize along body (0 = head, 1 = tail)
-          const t = 1 - (origX - sd.zMin) / sd.zRange;
+          // Normalize along body using global range (0 = head, 1 = tail)
+          const t = (origX - bodyXMin) / bodyXRange;
 
-          // === Dolphin kick (tail half only, t > 0.4) ===
-          const phase = time * 2.5 - t * 6.0;
+          // === Dolphin kick (tail half only, t > 0.35) ===
+          const phase = time * 2.5 - t * 5.0;
           const wave = Math.sin(phase);
 
-          // Only move rear half of body
-          const tailStart = 0.4;
+          const tailStart = 0.35;
           const tailT = t > tailStart ? (t - tailStart) / (1 - tailStart) : 0;
 
-          // Base amplitude: cubic increase from mid-body to tail
-          const baseAmplitude = tailT * tailT * tailT * 0.9;
+          const baseAmplitude = tailT * tailT * tailT * amp;
 
-          // Downstroke power
           const rearFactor = tailT > 0 ? Math.pow(tailT, 1.5) : 0;
-          const downPower = Math.min(wave, 0) * rearFactor * 1.2;
+          const downPower = Math.min(wave, 0) * rearFactor * amp * 0.5;
 
-          // Upstroke: tail tip whips up
           const tailTip = tailT > 0.6 ? Math.pow((tailT - 0.6) / 0.4, 2) : 0;
-          const upWhip = Math.max(wave, 0) * tailTip * 1.4;
+          const upWhip = Math.max(wave, 0) * tailTip * amp * 0.6;
 
           const tailWave = wave * baseAmplitude + downPower + upWhip;
           let newY = origY + tailWave;
 
-          // === Pectoral fin flapping (phase delay from root to tip) ===
-          const zNorm = (origZ - sd.xMin) / sd.xRange;
+          // === Pectoral fin flapping (wing-like, proximal→distal phase delay) ===
+          const zNorm = (origZ - bodyZMin) / bodyZRange;
           const lateralExtent = Math.abs(zNorm - 0.5) * 2; // 0=center, 1=tip
-          const isFinArea = t > 0.2 && t < 0.55 && lateralExtent > 0.35;
+          const finThreshold = 0.35;
+          const isFinArea = t > 0.2 && t < 0.55 && lateralExtent > finThreshold;
           if (isFinArea) {
-            // Phase delays from root→tip for fluid wing motion
-            const tipFactor = Math.pow((lateralExtent - 0.35) / 0.65, 1.3);
-            const finPhase = Math.sin(time * 3.0 - tipFactor * 2.5);
-            // Amplitude grows toward tip
-            const flapDown = Math.min(finPhase, 0) * tipFactor * 1.2;
-            const flapUp = Math.max(finPhase, 0) * tipFactor * 0.8;
-            newY += flapDown + flapUp;
-            // Forward/back sweep with same phase delay
-            const sweep = Math.cos(time * 3.0 - tipFactor * 2.5) * tipFactor * 0.25;
-            positions.setX(i, origX + sweep);
+            const tipFactor = (lateralExtent - finThreshold) / (1 - finThreshold);
+            const phaseDelay = Math.pow(tipFactor, 0.8) * 3.0;
+            const flapWave = Math.sin(time * 2.0 - phaseDelay);
+            const side = zNorm > 0.5 ? 1 : -1;
+            const flapAmp = Math.pow(tipFactor, 1.3) * amp * 0.9;
+            const outwardBias = flapAmp * 0.5 * side;
+            const newZ = origZ + outwardBias + flapWave * flapAmp * side;
+            positions.setZ(i, newZ);
+            const liftAmp = Math.pow(tipFactor, 1.7) * amp * 0.25;
+            newY += Math.max(flapWave, 0) * liftAmp;
           }
 
           positions.setY(i, newY);
-
-          // No head undulation — keep front body still
         }
         positions.needsUpdate = true;
+      }
+
+      // Move barnacles to match body deformation
+      for (const bd of barnacles) {
+        const t = bd.bodyT;
+        const origPos = bd.origPos;
+
+        // Same dolphin kick calculation as body vertices
+        const phase = time * 2.5 - t * 5.0;
+        const wave = Math.sin(phase);
+
+        const tailStart = 0.35;
+        const tailT = t > tailStart ? (t - tailStart) / (1 - tailStart) : 0;
+        const baseAmplitude = tailT * tailT * tailT * amp;
+        const rearFactor = tailT > 0 ? Math.pow(tailT, 1.5) : 0;
+        const downPower = Math.min(wave, 0) * rearFactor * amp * 0.5;
+        const tailTip = tailT > 0.6 ? Math.pow((tailT - 0.6) / 0.4, 2) : 0;
+        const upWhip = Math.max(wave, 0) * tailTip * amp * 0.6;
+        const tailWave = wave * baseAmplitude + downPower + upWhip;
+
+        let newY = origPos.y + tailWave;
+        let newZ = origPos.z;
+
+        // Pectoral fin flapping for barnacles on fins
+        const lateralExtent = Math.abs(bd.bodyZNorm - 0.5) * 2;
+        const finThreshold = 0.35;
+        const isFinArea = t > 0.2 && t < 0.55 && lateralExtent > finThreshold;
+        if (isFinArea) {
+          const tipFactor = (lateralExtent - finThreshold) / (1 - finThreshold);
+          const phaseDelay = Math.pow(tipFactor, 0.8) * 3.0;
+          const flapWave = Math.sin(time * 2.0 - phaseDelay);
+          const side = bd.bodyZNorm > 0.5 ? 1 : -1;
+          const flapAmp = Math.pow(tipFactor, 1.3) * amp * 0.9;
+          const outwardBias = flapAmp * 0.5 * side;
+          newZ = origPos.z + outwardBias + flapWave * flapAmp * side;
+          const liftAmp = Math.pow(tipFactor, 1.7) * amp * 0.25;
+          newY += Math.max(flapWave, 0) * liftAmp;
+        }
+
+        bd.obj.position.y = newY;
+        bd.obj.position.z = newZ;
       }
 
       renderer.render(scene, camera);

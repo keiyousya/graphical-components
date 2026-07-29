@@ -272,7 +272,7 @@ const sizes = {
             const tipFactor = (lateralExtent - finThreshold) / (1 - finThreshold);
             // Phase delay: front→back (along t) and bottom→top (along yNorm)
             const finT = (t - 0.2) / (0.55 - 0.2); // 0=front, 1=back
-            const phaseDelay = finT * 2.0 + yNorm * 1.5;
+            const phaseDelay = finT * 4.0 + yNorm * 3.0;
             const flapWave = Math.sin(time * 2.0 - phaseDelay);
             const side = zNorm > 0.5 ? 1 : -1;
             const flapAmp = Math.pow(tipFactor, 1.3) * amp * 0.9;
@@ -316,7 +316,7 @@ const sizes = {
         if (isFinArea) {
           const tipFactor = (lateralExtent - finThreshold) / (1 - finThreshold);
           const finT = (t - 0.2) / (0.55 - 0.2);
-          const phaseDelay = finT * 2.0 + bd.bodyYNorm * 1.5;
+          const phaseDelay = finT * 4.0 + bd.bodyYNorm * 3.0;
           const flapWave = Math.sin(time * 2.0 - phaseDelay);
           const side = bd.bodyZNorm > 0.5 ? 1 : -1;
           const flapAmp = Math.pow(tipFactor, 1.3) * amp * 0.9;

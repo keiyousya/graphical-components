@@ -59,12 +59,14 @@ const sizes = {
       obj: THREE.Object3D; // parent object (pCylinder)
       origPos: THREE.Vector3; // original world position
       bodyT: number; // normalized position along body (0=head, 1=tail)
+      bodyYNorm: number; // normalized vertical position (0=bottom, 1=top)
       bodyZNorm: number; // normalized lateral position (0..1)
     }
     const barnacles: BarnacleData[] = [];
 
     // Global body ranges (from body mesh only)
     let bodyXMin = Infinity, bodyXMax = -Infinity;
+    let bodyYMin = Infinity, bodyYMax = -Infinity;
     let bodyZMin = Infinity, bodyZMax = -Infinity;
 
     // === Load whale GLB model ===
@@ -106,9 +108,12 @@ const sizes = {
         const positions = mesh.geometry.getAttribute("position");
         for (let i = 0; i < positions.count; i++) {
           const x = positions.getX(i);
+          const y = positions.getY(i);
           const z = positions.getZ(i);
           if (x < bodyXMin) bodyXMin = x;
           if (x > bodyXMax) bodyXMax = x;
+          if (y < bodyYMin) bodyYMin = y;
+          if (y > bodyYMax) bodyYMax = y;
           if (z < bodyZMin) bodyZMin = z;
           if (z > bodyZMax) bodyZMax = z;
         }
@@ -144,6 +149,7 @@ const sizes = {
 
       // Setup barnacles — store world position and compute body-relative coords
       const bodyXRange = bodyXMax - bodyXMin;
+      const bodyYRange = bodyYMax - bodyYMin;
       const bodyZRange = bodyZMax - bodyZMin;
       for (const mesh of barnacleMeshes) {
         // Style barnacles the same way
@@ -169,11 +175,13 @@ const sizes = {
         // parentObj.position is in model-local space (same coord system as body vertices)
         const lp = parentObj.position;
         const bT = (lp.x - bodyXMin) / bodyXRange;
+        const bY = (lp.y - bodyYMin) / bodyYRange;
         const bZ = (lp.z - bodyZMin) / bodyZRange;
         barnacles.push({
           obj: parentObj,
           origPos: lp.clone(),
           bodyT: bT,
+          bodyYNorm: bY,
           bodyZNorm: bZ,
         });
       }
@@ -217,6 +225,7 @@ const sizes = {
 
       // Swimming vertex deformation (dolphin kick + fin movement)
       const bodyXRange = bodyXMax - bodyXMin;
+      const bodyYRange = bodyYMax - bodyYMin;
       const bodyZRange = bodyZMax - bodyZMin;
       const amp = bodyXRange * 0.04;
 
@@ -235,7 +244,7 @@ const sizes = {
           const phase = time * 2.5 - t * 5.0;
           const wave = Math.sin(phase);
 
-          const tailStart = 0.35;
+          const tailStart = 0.25;
           const tailT = t > tailStart ? (t - tailStart) / (1 - tailStart) : 0;
 
           const baseAmplitude = tailT * tailT * tailT * amp;
@@ -249,14 +258,17 @@ const sizes = {
           const tailWave = wave * baseAmplitude + downPower + upWhip;
           let newY = origY + tailWave;
 
-          // === Pectoral fin flapping (wing-like, proximal→distal phase delay) ===
+          // === Pectoral fin swing (root-to-tip axis rotation with directional phase) ===
           const zNorm = (origZ - bodyZMin) / bodyZRange;
+          const yNorm = (origY - bodyYMin) / bodyYRange;
           const lateralExtent = Math.abs(zNorm - 0.5) * 2; // 0=center, 1=tip
           const finThreshold = 0.35;
           const isFinArea = t > 0.2 && t < 0.55 && lateralExtent > finThreshold;
           if (isFinArea) {
             const tipFactor = (lateralExtent - finThreshold) / (1 - finThreshold);
-            const phaseDelay = Math.pow(tipFactor, 0.8) * 3.0;
+            // Phase delay: front→back (along t) and bottom→top (along yNorm)
+            const finT = (t - 0.2) / (0.55 - 0.2); // 0=front, 1=back
+            const phaseDelay = finT * 2.0 + yNorm * 1.5;
             const flapWave = Math.sin(time * 2.0 - phaseDelay);
             const side = zNorm > 0.5 ? 1 : -1;
             const flapAmp = Math.pow(tipFactor, 1.3) * amp * 0.9;
@@ -281,7 +293,7 @@ const sizes = {
         const phase = time * 2.5 - t * 5.0;
         const wave = Math.sin(phase);
 
-        const tailStart = 0.35;
+        const tailStart = 0.25;
         const tailT = t > tailStart ? (t - tailStart) / (1 - tailStart) : 0;
         const baseAmplitude = tailT * tailT * tailT * amp;
         const rearFactor = tailT > 0 ? Math.pow(tailT, 1.5) : 0;
@@ -293,13 +305,14 @@ const sizes = {
         let newY = origPos.y + tailWave;
         let newZ = origPos.z;
 
-        // Pectoral fin flapping for barnacles on fins
+        // Pectoral fin swing for barnacles on fins
         const lateralExtent = Math.abs(bd.bodyZNorm - 0.5) * 2;
         const finThreshold = 0.35;
         const isFinArea = t > 0.2 && t < 0.55 && lateralExtent > finThreshold;
         if (isFinArea) {
           const tipFactor = (lateralExtent - finThreshold) / (1 - finThreshold);
-          const phaseDelay = Math.pow(tipFactor, 0.8) * 3.0;
+          const finT = (t - 0.2) / (0.55 - 0.2);
+          const phaseDelay = finT * 2.0 + bd.bodyYNorm * 1.5;
           const flapWave = Math.sin(time * 2.0 - phaseDelay);
           const side = bd.bodyZNorm > 0.5 ? 1 : -1;
           const flapAmp = Math.pow(tipFactor, 1.3) * amp * 0.9;

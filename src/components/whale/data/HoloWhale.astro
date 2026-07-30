@@ -231,7 +231,7 @@ const sizes = {
       const bodyXRange = bodyXMax - bodyXMin;
       const bodyYRange = bodyYMax - bodyYMin;
       const bodyZRange = bodyZMax - bodyZMin;
-      const amp = bodyXRange * 0.04;
+      const amp = bodyXRange * 0.06;
 
       for (const sd of swimTargets) {
         const positions = sd.geo.getAttribute("position") as THREE.BufferAttribute;
@@ -248,7 +248,7 @@ const sizes = {
           const phase = time * 2.5 - t * 5.0;
           const wave = Math.sin(phase);
 
-          const tailStart = 0.25;
+          const tailStart = 0.15;
           const tailT = t > tailStart ? (t - tailStart) / (1 - tailStart) : 0;
 
           const baseAmplitude = tailT * tailT * tailT * amp;
@@ -297,7 +297,7 @@ const sizes = {
         const phase = time * 2.5 - t * 5.0;
         const wave = Math.sin(phase);
 
-        const tailStart = 0.25;
+        const tailStart = 0.15;
         const tailT = t > tailStart ? (t - tailStart) / (1 - tailStart) : 0;
         const baseAmplitude = tailT * tailT * tailT * amp;
         const rearFactor = tailT > 0 ? Math.pow(tailT, 1.5) : 0;

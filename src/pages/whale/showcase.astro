@@ -5,6 +5,7 @@ import OceanGlass from "../../components/whale/panels/OceanGlass.astro";
 import AquaButton from "../../components/whale/controls/AquaButton.astro";
 import DepthText from "../../components/whale/typography/DepthText.astro";
 import DepthIndicator from "../../components/whale/feedback/DepthIndicator.astro";
+import WhaleSpinner from "../../components/whale/feedback/WhaleSpinner.astro";
 import SectionHeader from "../../components/whale/catalog/SectionHeader.astro";
 import DemoBlock from "../../components/whale/catalog/DemoBlock.astro";
 import { url } from "../../utils/paths";
@@ -116,6 +117,15 @@ import { url } from "../../utils/paths";
       <!-- Feedback -->
       <section id="feedback">
         <SectionHeader title="Feedback" tag="status" />
+        <DemoBlock title="Loading" label="ローディング">
+          <OceanGlass variant="subtle">
+            <div class="flex flex-wrap items-end gap-8">
+              <WhaleSpinner size="sm" label="SM" />
+              <WhaleSpinner size="md" label="LOADING" />
+              <WhaleSpinner size="lg" label="LG" />
+            </div>
+          </OceanGlass>
+        </DemoBlock>
         <DemoBlock title="Indicators" label="ステータス">
           <OceanGlass variant="subtle">
             <div class="flex flex-wrap gap-6">

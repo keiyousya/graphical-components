@@ -49,9 +49,9 @@
   --color-matcha-700: oklch(0.34 0.04 135);
 
   /* --- Fonts --- */
-  --font-display: "Rajdhani", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Zen Maru Gothic", "Rajdhani", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
-  --font-ui: "Rajdhani", "Exo 2", ui-sans-serif, system-ui, sans-serif;
+  --font-ui: "Zen Maru Gothic", "Rajdhani", ui-sans-serif, system-ui, sans-serif;
 
   /* --- Shadows --- */
   --shadow-curry-sm: 0 1px 4px oklch(0.68 0.14 60 / 0.1);

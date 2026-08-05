@@ -1,0 +1,18 @@
+---
+interface Props {
+  title: string;
+  tag?: string;
+  class?: string;
+}
+
+const { title, tag, class: className = "" } = Astro.props;
+---
+
+<div class:list={["flex items-center gap-4 mb-8", className]}>
+  <div class="flex items-center gap-2">
+    <span class="size-2 rounded-full bg-spice-500 animate-curry-simmer"></span>
+    {tag && <span class="font-mono text-[10px] text-spice-400 uppercase tracking-[0.2em]">{tag}</span>}
+  </div>
+  <h2 class="font-display text-lg font-bold tracking-wider text-roux-700">{title}</h2>
+  <div class="flex-1 h-px bg-gradient-to-r from-spice-300/40 to-transparent"></div>
+</div>

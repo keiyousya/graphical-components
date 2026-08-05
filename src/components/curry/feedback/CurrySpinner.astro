@@ -1,0 +1,86 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg";
+  label?: string;
+  class?: string;
+}
+
+const { size = "md", label, class: className = "" } = Astro.props;
+
+const sizes = {
+  sm: "size-8",
+  md: "size-16",
+  lg: "size-24",
+};
+---
+
+<div class:list={["inline-flex flex-col items-center gap-3", className]}>
+  <div class:list={["curry-spinner relative", sizes[size]]}>
+    <svg viewBox="0 0 100 100" class="size-full" fill="none">
+      <!-- Plate rim -->
+      <circle
+        cx="50" cy="50" r="46"
+        stroke="oklch(0.82 0.10 60)"
+        stroke-width="0.8"
+      />
+      <!-- Outer spinning arc (curry swirl) -->
+      <circle
+        cx="50" cy="50" r="46"
+        stroke="oklch(0.65 0.14 60)"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-dasharray="72 217"
+        class="spinner-outer"
+      />
+
+      <!-- Inner ring -->
+      <circle
+        cx="50" cy="50" r="32"
+        stroke="oklch(0.90 0.06 60)"
+        stroke-width="0.5"
+      />
+      <!-- Inner spinning arc (roux swirl) -->
+      <circle
+        cx="50" cy="50" r="32"
+        stroke="oklch(0.33 0.06 50)"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-dasharray="40 161"
+        class="spinner-inner"
+      />
+
+      <!-- Soft serve swirl center -->
+      <circle
+        cx="50" cy="50" r="6"
+        fill="oklch(0.97 0.01 85)"
+        stroke="oklch(0.90 0.03 80)"
+        stroke-width="1"
+        class="animate-curry-simmer"
+      />
+      <circle
+        cx="50" cy="47" r="3"
+        fill="oklch(0.99 0.005 85)"
+        class="animate-curry-simmer"
+      />
+    </svg>
+  </div>
+  {label && (
+    <span class="font-mono text-[10px] text-spice-600 tracking-[0.15em] uppercase animate-curry-simmer">
+      {label}
+    </span>
+  )}
+</div>
+
+<style>
+  .spinner-outer {
+    animation: curry-spin 2s linear infinite;
+    transform-origin: center;
+  }
+  .spinner-inner {
+    animation: curry-spin 3s linear infinite reverse;
+    transform-origin: center;
+  }
+  @keyframes curry-spin {
+    to { transform: rotate(360deg); }
+  }
+</style>

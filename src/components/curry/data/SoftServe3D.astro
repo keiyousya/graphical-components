@@ -1,0 +1,123 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg" | "xl";
+  class?: string;
+}
+
+const {
+  size = "lg",
+  class: className = "",
+} = Astro.props;
+
+const sizes = {
+  sm: "h-48",
+  md: "h-64",
+  lg: "h-80",
+  xl: "h-[32rem]",
+};
+---
+
+<div
+  class:list={["soft-serve-3d relative w-full", sizes[size], className]}
+>
+  <canvas class="soft-serve-canvas absolute inset-0 w-full h-full"></canvas>
+</div>
+
+<script>
+  import * as THREE from "three";
+  import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+  import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+  import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+  const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+  document.querySelectorAll<HTMLElement>(".soft-serve-3d").forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>(".soft-serve-canvas");
+    if (!canvas) return;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(35, 2, 0.1, 100);
+    camera.position.set(2, 3, 6);
+    camera.lookAt(0, 1.5, 0);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.3;
+
+    // Soft warm lighting
+    const ambientLight = new THREE.AmbientLight(0xfff8f0, 0.7);
+    scene.add(ambientLight);
+
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    mainLight.position.set(2, 4, 3);
+    scene.add(mainLight);
+
+    const warmLight = new THREE.DirectionalLight(0xffeedd, 0.4);
+    warmLight.position.set(-3, 2, -1);
+    scene.add(warmLight);
+
+    // Subtle cream-colored point light for glow effect
+    const glowLight = new THREE.PointLight(0xfff5e6, 0.5, 5);
+    glowLight.position.set(0, 2, 0);
+    scene.add(glowLight);
+
+    const iceCreamGroup = new THREE.Group();
+    scene.add(iceCreamGroup);
+
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.7/");
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
+
+    loader.load(`${BASE_URL}/models/softcream.glb`, (gltf) => {
+      const model = gltf.scene;
+      const box = new THREE.Box3().setFromObject(model);
+      const center = box.getCenter(new THREE.Vector3());
+      const bSize = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(bSize.x, bSize.y, bSize.z);
+      const scale = 3.5 / maxDim;
+      model.position.sub(center);
+      model.scale.setScalar(scale);
+
+      iceCreamGroup.add(model);
+    });
+
+    // Orbit controls
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = true;
+    controls.enablePan = false;
+    controls.target.set(0, 1.5, 0);
+    controls.minDistance = 3;
+    controls.maxDistance = 15;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 2.0;
+
+    function resize() {
+      const r = container.getBoundingClientRect();
+      renderer.setSize(r.width, r.height);
+      camera.aspect = r.width / r.height;
+      camera.updateProjectionMatrix();
+    }
+
+    let time = 0;
+    function animate() {
+      time += 0.01;
+
+      // Gentle swaying motion (like holding a cone)
+      iceCreamGroup.rotation.z = Math.sin(time * 0.8) * 0.03;
+      iceCreamGroup.position.y = Math.sin(time * 0.6) * 0.05;
+
+      controls.update();
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    animate();
+    const resizeObserver = new ResizeObserver(() => resize());
+    resizeObserver.observe(container);
+  });
+</script>

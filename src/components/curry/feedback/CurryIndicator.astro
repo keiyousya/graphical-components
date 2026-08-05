@@ -1,0 +1,25 @@
+---
+interface Props {
+  status?: "hot" | "warm" | "cool" | "fresh";
+  label?: string;
+  class?: string;
+}
+
+const {
+  status = "hot",
+  label,
+  class: className = "",
+} = Astro.props;
+
+const statusStyles = {
+  hot: "bg-spice-500",
+  warm: "bg-spice-300",
+  cool: "bg-matcha-400",
+  fresh: "bg-cream-400",
+};
+---
+
+<div class:list={["inline-flex items-center gap-2", className]}>
+  <span class:list={["size-2 rounded-full animate-curry-simmer", statusStyles[status]]} />
+  {label && <span class="font-mono text-[10px] text-roux-400 uppercase tracking-wider">{label}</span>}
+</div>

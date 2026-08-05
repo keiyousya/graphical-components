@@ -1,0 +1,155 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg" | "xl";
+  class?: string;
+}
+
+const {
+  size = "lg",
+  class: className = "",
+} = Astro.props;
+
+const sizes = {
+  sm: "h-48",
+  md: "h-64",
+  lg: "h-80",
+  xl: "h-[32rem]",
+};
+---
+
+<div
+  class:list={["curry-plate-3d relative w-full", sizes[size], className]}
+>
+  <canvas class="curry-plate-canvas absolute inset-0 w-full h-full"></canvas>
+</div>
+
+<script>
+  import * as THREE from "three";
+  import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+  import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+  import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+  const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+  document.querySelectorAll<HTMLElement>(".curry-plate-3d").forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>(".curry-plate-canvas");
+    if (!canvas) return;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(35, 2, 0.1, 100);
+    camera.position.set(1.5, 1.8, 1.5);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+
+    // Warm lighting
+    const ambientLight = new THREE.AmbientLight(0xfff5e6, 0.6);
+    scene.add(ambientLight);
+
+    const mainLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+    mainLight.position.set(3, 5, 3);
+    scene.add(mainLight);
+
+    const fillLight = new THREE.DirectionalLight(0xd4842a, 0.3);
+    fillLight.position.set(-2, 1, -2);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    rimLight.position.set(0, 3, -3);
+    scene.add(rimLight);
+
+    const plateGroup = new THREE.Group();
+    scene.add(plateGroup);
+
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.7/");
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
+
+    // Load curry model
+    loader.load(`${BASE_URL}/models/curry.glb`, (gltf) => {
+      const model = gltf.scene;
+      const box = new THREE.Box3().setFromObject(model);
+      const center = box.getCenter(new THREE.Vector3());
+      const bSize = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(bSize.x, bSize.y, bSize.z);
+      const scale = 2.5 / maxDim;
+      model.position.sub(center);
+      model.scale.setScalar(scale);
+
+      plateGroup.add(model);
+    });
+
+    // Steam particles
+    const steamGeo = new THREE.BufferGeometry();
+    const steamCount = 20;
+    const steamPositions = new Float32Array(steamCount * 3);
+    const steamVelocities: number[] = [];
+    for (let i = 0; i < steamCount; i++) {
+      steamPositions[i * 3] = (Math.random() - 0.5) * 0.8;
+      steamPositions[i * 3 + 1] = 0.4 + Math.random() * 0.3;
+      steamPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.8;
+      steamVelocities.push(0.003 + Math.random() * 0.005);
+    }
+    steamGeo.setAttribute("position", new THREE.BufferAttribute(steamPositions, 3));
+    const steamMat = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 0.04,
+      transparent: true,
+      opacity: 0.3,
+    });
+    const steamParticles = new THREE.Points(steamGeo, steamMat);
+    plateGroup.add(steamParticles);
+
+    // Orbit controls
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = true;
+    controls.enablePan = false;
+    controls.minDistance = 1;
+    controls.maxDistance = 8;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 1.5;
+
+    function resize() {
+      const r = container.getBoundingClientRect();
+      renderer.setSize(r.width, r.height);
+      camera.aspect = r.width / r.height;
+      camera.updateProjectionMatrix();
+    }
+
+    let time = 0;
+    function animate() {
+      time += 0.01;
+
+      // Gentle floating
+      plateGroup.position.y = Math.sin(time * 0.5) * 0.03;
+
+      // Animate steam
+      const positions = steamGeo.getAttribute("position") as THREE.BufferAttribute;
+      for (let i = 0; i < steamCount; i++) {
+        positions.array[i * 3 + 1] += steamVelocities[i];
+        if (positions.array[i * 3 + 1] > 1.5) {
+          positions.array[i * 3 + 1] = 0.4;
+          positions.array[i * 3] = (Math.random() - 0.5) * 0.8;
+          positions.array[i * 3 + 2] = (Math.random() - 0.5) * 0.8;
+        }
+      }
+      positions.needsUpdate = true;
+      steamMat.opacity = 0.2 + Math.sin(time) * 0.1;
+
+      controls.update();
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    animate();
+    const resizeObserver = new ResizeObserver(() => resize());
+    resizeObserver.observe(container);
+  });
+</script>

@@ -1,0 +1,244 @@
+---
+import CurryLayout from "../../layouts/CurryLayout.astro";
+import CurryGlass from "../../components/curry/panels/CurryGlass.astro";
+import SpiceButton from "../../components/curry/controls/SpiceButton.astro";
+import CurryText from "../../components/curry/typography/CurryText.astro";
+import CurryIndicator from "../../components/curry/feedback/CurryIndicator.astro";
+import CurrySpinner from "../../components/curry/feedback/CurrySpinner.astro";
+import CurryPlate3D from "../../components/curry/data/CurryPlate3D.astro";
+import SoftServe3D from "../../components/curry/data/SoftServe3D.astro";
+import SectionHeader from "../../components/curry/catalog/SectionHeader.astro";
+import DemoBlock from "../../components/curry/catalog/DemoBlock.astro";
+import { url } from "../../utils/paths";
+---
+
+<CurryLayout title="Showcase | Curry & Soft Serve">
+  <div class="relative min-h-dvh">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 border-b border-spice-200/30 bg-cream-100/80 backdrop-blur-md px-6 py-3">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <a href={url("/curry")} class="flex items-center gap-3">
+          <CurryIndicator status="hot" />
+          <span class="font-display text-xs font-bold tracking-wider text-roux-600 uppercase">
+            CURRY & SOFT SERVE
+          </span>
+        </a>
+        <nav class="flex items-center gap-4 font-mono text-[10px] text-roux-400">
+          <a href={url("/curry")} class="hover:text-spice-500 transition-colors">HOME</a>
+          <a href={url("/curry/showcase")} class="text-spice-600 font-bold">SHOWCASE</a>
+          <a href={url("/")} class="hover:text-spice-500 transition-colors">THEMES</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="relative z-10 max-w-7xl mx-auto px-6 py-12 space-y-20">
+
+      <!-- 3D Components -->
+      <section id="three">
+        <SectionHeader title="3D Components" tag="three.js" />
+        <div class="space-y-6">
+          <DemoBlock title="Curry Plate" label="カレーライス">
+            <CurryPlate3D size="xl" />
+          </DemoBlock>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <DemoBlock title="Soft Serve" label="ソフトクリーム">
+              <CurryGlass>
+                <SoftServe3D size="md" />
+              </CurryGlass>
+            </DemoBlock>
+            <DemoBlock title="Curry (Small)" label="カレー">
+              <CurryGlass>
+                <CurryPlate3D size="md" />
+              </CurryGlass>
+            </DemoBlock>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panels -->
+      <section id="panels">
+        <SectionHeader title="Panels" tag="panels" />
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <DemoBlock title="Default" label="デフォルト">
+            <CurryGlass>
+              <p class="font-ui text-sm text-roux-500">クリームパネル</p>
+              <p class="font-mono text-[10px] text-spice-400 mt-2">default variant</p>
+            </CurryGlass>
+          </DemoBlock>
+          <DemoBlock title="Spice" label="スパイス">
+            <CurryGlass variant="spice">
+              <p class="font-ui text-sm text-roux-500">スパイスパネル</p>
+              <p class="font-mono text-[10px] text-spice-400 mt-2">spice variant</p>
+            </CurryGlass>
+          </DemoBlock>
+          <DemoBlock title="Matcha" label="抹茶">
+            <CurryGlass variant="matcha">
+              <p class="font-ui text-sm text-roux-500">抹茶パネル</p>
+              <p class="font-mono text-[10px] text-matcha-400 mt-2">matcha variant</p>
+            </CurryGlass>
+          </DemoBlock>
+        </div>
+      </section>
+
+      <!-- Controls -->
+      <section id="controls">
+        <SectionHeader title="Controls" tag="controls" />
+        <DemoBlock title="Buttons" label="ボタン">
+          <CurryGlass>
+            <div class="flex flex-wrap gap-3">
+              <SpiceButton variant="spice">Spice</SpiceButton>
+              <SpiceButton variant="roux">Roux</SpiceButton>
+              <SpiceButton variant="cream">Cream</SpiceButton>
+              <SpiceButton variant="matcha">Matcha</SpiceButton>
+            </div>
+            <div class="flex flex-wrap gap-3 mt-4">
+              <SpiceButton variant="spice" size="sm">Small</SpiceButton>
+              <SpiceButton variant="spice" size="md">Medium</SpiceButton>
+              <SpiceButton variant="spice" size="lg">Large</SpiceButton>
+            </div>
+          </CurryGlass>
+        </DemoBlock>
+      </section>
+
+      <!-- Typography -->
+      <section id="typography">
+        <SectionHeader title="Typography" tag="type" />
+        <DemoBlock title="Text Styles" label="テキスト">
+          <CurryGlass>
+            <div class="space-y-4">
+              <CurryText tag="h1" variant="display" class="text-3xl">カレーとソフトクリーム</CurryText>
+              <CurryText tag="h2" variant="display" class="text-xl">Curry and Soft Serve</CurryText>
+              <CurryText tag="p" variant="ui" class="text-base">あたたかくて、おいしいインターフェース</CurryText>
+              <CurryText tag="span" variant="mono" class="text-sm">SPICE: ★★★ // TEMP: 82°C</CurryText>
+            </div>
+          </CurryGlass>
+        </DemoBlock>
+      </section>
+
+      <!-- Feedback -->
+      <section id="feedback">
+        <SectionHeader title="Feedback" tag="status" />
+        <DemoBlock title="Loading" label="ローディング">
+          <CurryGlass>
+            <div class="flex flex-wrap items-end gap-8">
+              <CurrySpinner size="sm" label="SM" />
+              <CurrySpinner size="md" label="SIMMERING" />
+              <CurrySpinner size="lg" label="LG" />
+            </div>
+          </CurryGlass>
+        </DemoBlock>
+        <div class="mt-6">
+          <DemoBlock title="Indicators" label="ステータス">
+            <CurryGlass>
+              <div class="flex flex-wrap gap-6">
+                <CurryIndicator status="hot" label="HOT" />
+                <CurryIndicator status="warm" label="WARM" />
+                <CurryIndicator status="cool" label="COOL" />
+                <CurryIndicator status="fresh" label="FRESH" />
+              </div>
+            </CurryGlass>
+          </DemoBlock>
+        </div>
+      </section>
+
+      <!-- Decorative: Menu-style card -->
+      <section id="menu">
+        <SectionHeader title="Menu Card" tag="decorative" />
+        <DemoBlock title="Menu Style" label="メニュー">
+          <CurryGlass variant="spice">
+            <div class="text-center py-6 space-y-4">
+              <p class="font-mono text-[10px] text-spice-500 tracking-[0.3em] uppercase">Today's Menu</p>
+              <h3 class="font-display text-2xl font-bold text-roux-700 tracking-wider">スパイスカレー</h3>
+              <div class="w-16 h-px bg-spice-400/40 mx-auto"></div>
+              <p class="font-ui text-sm text-roux-400">
+                10種のスパイスを使用した本格カレー<br/>
+                ソフトクリーム付き
+              </p>
+              <div class="flex items-center justify-center gap-4 font-mono text-[10px] text-spice-400">
+                <span>辛さ ★★★☆☆</span>
+                <span class="text-spice-200">|</span>
+                <span>¥1,200</span>
+              </div>
+              <SpiceButton variant="spice" size="sm">ORDER</SpiceButton>
+            </div>
+          </CurryGlass>
+        </DemoBlock>
+      </section>
+
+      <!-- Color Palette -->
+      <section id="palette">
+        <SectionHeader title="Color Palette" tag="colors" />
+        <DemoBlock title="Theme Colors" label="カラー">
+          <CurryGlass>
+            <div class="space-y-4">
+              <div>
+                <p class="font-mono text-[10px] text-roux-400 mb-2">SPICE (Curry Orange)</p>
+                <div class="flex gap-1">
+                  <div class="h-8 flex-1 rounded-lg bg-spice-100"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-spice-200"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-spice-300"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-spice-400"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-spice-500"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-spice-600"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-spice-700"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-spice-800"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-spice-900"></div>
+                </div>
+              </div>
+              <div>
+                <p class="font-mono text-[10px] text-roux-400 mb-2">ROUX (Dark Brown)</p>
+                <div class="flex gap-1">
+                  <div class="h-8 flex-1 rounded-lg bg-roux-100"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-roux-200"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-roux-300"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-roux-400"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-roux-500"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-roux-600"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-roux-700"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-roux-800"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-roux-900"></div>
+                </div>
+              </div>
+              <div>
+                <p class="font-mono text-[10px] text-roux-400 mb-2">CREAM (Soft Serve)</p>
+                <div class="flex gap-1">
+                  <div class="h-8 flex-1 rounded-lg bg-cream-50 border border-spice-100/30"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-cream-100 border border-spice-100/30"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-cream-200"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-cream-300"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-cream-400"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-cream-500"></div>
+                </div>
+              </div>
+              <div>
+                <p class="font-mono text-[10px] text-roux-400 mb-2">MATCHA (Deep Green)</p>
+                <div class="flex gap-1">
+                  <div class="h-8 flex-1 rounded-lg bg-matcha-50"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-matcha-100"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-matcha-200"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-matcha-300"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-matcha-400"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-matcha-500"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-matcha-600"></div>
+                  <div class="h-8 flex-1 rounded-lg bg-matcha-700"></div>
+                </div>
+              </div>
+            </div>
+          </CurryGlass>
+        </DemoBlock>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-10 border-t border-spice-200/30 px-6 py-4 mt-20">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <CurryIndicator status="hot" label="SHOWCASE.ACTIVE" />
+        <span class="font-mono text-[10px] text-roux-300 tracking-wider">
+          CURRY.THEME // GRAPHICAL.COMPONENTS
+        </span>
+      </div>
+    </footer>
+  </div>
+</CurryLayout>

@@ -1,0 +1,42 @@
+---
+interface Props {
+  variant?: "spice" | "roux" | "cream" | "matcha";
+  size?: "sm" | "md" | "lg";
+  href?: string;
+  class?: string;
+}
+
+const {
+  variant = "spice",
+  size = "md",
+  href,
+  class: className = "",
+} = Astro.props;
+
+const variantStyles = {
+  spice: "bg-spice-500 text-cream-50 hover:bg-spice-600 border-spice-600/30",
+  roux: "bg-roux-600 text-cream-100 hover:bg-roux-700 border-roux-700/30",
+  cream: "bg-cream-100 text-roux-600 hover:bg-cream-200 border-spice-300/30",
+  matcha: "bg-matcha-500 text-cream-50 hover:bg-matcha-600 border-matcha-600/30",
+};
+
+const sizeStyles = {
+  sm: "px-3 py-1.5 text-xs",
+  md: "px-5 py-2.5 text-sm",
+  lg: "px-7 py-3 text-base",
+};
+
+const Tag = href ? "a" : "button";
+---
+
+<Tag
+  href={href}
+  class:list={[
+    "inline-flex items-center gap-2 border rounded-full font-ui font-semibold tracking-wider transition-all duration-300 shadow-curry-sm hover:shadow-curry-md",
+    variantStyles[variant],
+    sizeStyles[size],
+    className,
+  ]}
+>
+  <slot />
+</Tag>

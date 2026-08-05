@@ -1,0 +1,101 @@
+@import "tailwindcss";
+@import "./curry-effects.css";
+
+/* ============================================
+   CURRY & SOFT SERVE THEME — DESIGN TOKENS
+   Orange × Brown × Cream × Matcha
+   ============================================ */
+@theme {
+  /* --- Spice: Curry orange tones --- */
+  --color-spice-50: oklch(0.96 0.03 60);
+  --color-spice-100: oklch(0.90 0.06 60);
+  --color-spice-200: oklch(0.82 0.10 60);
+  --color-spice-300: oklch(0.75 0.12 60);
+  --color-spice-400: oklch(0.70 0.14 60);
+  --color-spice-500: oklch(0.65 0.14 60);
+  --color-spice-600: oklch(0.58 0.14 55);
+  --color-spice-700: oklch(0.50 0.12 50);
+  --color-spice-800: oklch(0.42 0.10 48);
+  --color-spice-900: oklch(0.35 0.08 45);
+
+  /* --- Roux: Dark brown tones --- */
+  --color-roux-50: oklch(0.90 0.02 50);
+  --color-roux-100: oklch(0.80 0.04 50);
+  --color-roux-200: oklch(0.65 0.05 50);
+  --color-roux-300: oklch(0.52 0.06 50);
+  --color-roux-400: oklch(0.42 0.06 50);
+  --color-roux-500: oklch(0.33 0.06 50);
+  --color-roux-600: oklch(0.28 0.06 48);
+  --color-roux-700: oklch(0.22 0.05 45);
+  --color-roux-800: oklch(0.18 0.04 42);
+  --color-roux-900: oklch(0.12 0.03 40);
+
+  /* --- Cream: Soft serve vanilla tones --- */
+  --color-cream-50: oklch(0.995 0.005 85);
+  --color-cream-100: oklch(0.97 0.01 85);
+  --color-cream-200: oklch(0.95 0.02 85);
+  --color-cream-300: oklch(0.93 0.03 85);
+  --color-cream-400: oklch(0.90 0.03 80);
+  --color-cream-500: oklch(0.87 0.04 78);
+
+  /* --- Matcha: Deep green accent --- */
+  --color-matcha-50: oklch(0.92 0.02 140);
+  --color-matcha-100: oklch(0.82 0.04 140);
+  --color-matcha-200: oklch(0.70 0.05 140);
+  --color-matcha-300: oklch(0.60 0.06 140);
+  --color-matcha-400: oklch(0.52 0.06 140);
+  --color-matcha-500: oklch(0.46 0.06 140);
+  --color-matcha-600: oklch(0.40 0.05 138);
+  --color-matcha-700: oklch(0.34 0.04 135);
+
+  /* --- Fonts --- */
+  --font-display: "Rajdhani", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  --font-ui: "Rajdhani", "Exo 2", ui-sans-serif, system-ui, sans-serif;
+
+  /* --- Shadows --- */
+  --shadow-curry-sm: 0 1px 4px oklch(0.68 0.14 60 / 0.1);
+  --shadow-curry-md: 0 4px 12px oklch(0.68 0.14 60 / 0.12);
+  --shadow-curry-lg: 0 8px 24px oklch(0.68 0.14 60 / 0.15);
+
+  /* --- Animations --- */
+  --animate-curry-simmer: curry-simmer 3s ease-in-out infinite;
+  --animate-curry-melt: curry-melt 4s ease-in-out infinite;
+  --animate-curry-steam: curry-steam 2.5s ease-out infinite;
+
+  @keyframes curry-simmer {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.05); opacity: 1; }
+  }
+
+  @keyframes curry-melt {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(3px); }
+  }
+
+  @keyframes curry-steam {
+    0% { opacity: 0.5; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-12px) scale(1.3); }
+  }
+}
+
+@layer base {
+  html {
+    scrollbar-color: oklch(0.68 0.14 60 / 0.4) oklch(0.95 0.02 85);
+  }
+  html::-webkit-scrollbar {
+    width: 6px;
+  }
+  html::-webkit-scrollbar-track {
+    background: oklch(0.95 0.02 85);
+  }
+  html::-webkit-scrollbar-thumb {
+    background: oklch(0.68 0.14 60 / 0.4);
+    border-radius: 3px;
+  }
+
+  ::selection {
+    background: oklch(0.68 0.14 60 / 0.2);
+    color: oklch(0.28 0.06 48);
+  }
+}

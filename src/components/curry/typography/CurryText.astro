@@ -1,0 +1,23 @@
+---
+interface Props {
+  tag?: "h1" | "h2" | "h3" | "h4" | "p" | "span";
+  variant?: "display" | "ui" | "mono";
+  class?: string;
+}
+
+const {
+  tag: Tag = "h2",
+  variant = "display",
+  class: className = "",
+} = Astro.props;
+
+const variantStyles = {
+  display: "font-display font-bold tracking-wider text-roux-700",
+  ui: "font-ui tracking-wide text-roux-500",
+  mono: "font-mono text-spice-600",
+};
+---
+
+<Tag class:list={[variantStyles[variant], className]}>
+  <slot />
+</Tag>
